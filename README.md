@@ -14,8 +14,10 @@ B2B Admin Console for OrderHub, built with Next.js 15 App Router, React 19, Type
 Install project dependencies:
 
 ```bash
-pnpm install --no-optional
+pnpm install
 ```
+
+> **Note on pnpm build scripts**: On modern pnpm (v10+), if pnpm prompts with `ERR_PNPM_IGNORED_BUILDS` regarding optional build scripts such as `sharp`, you can approve them using `pnpm approve-builds` / `pnpm approve-builds --all`, or install skipping lifecycle scripts via `pnpm install --ignore-scripts`.
 
 ### 2. Environment Configuration
 

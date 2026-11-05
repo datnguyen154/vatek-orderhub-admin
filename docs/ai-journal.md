@@ -54,3 +54,41 @@ Execute Session 01 (step-1 / D6) to establish a runnable, strictly-typed Next.js
 - Local repository only (no remote, no Vercel deployment yet; scheduled for step-3).
 - Visual baseline and token scale to be formalized in Session 02 (step-2).
 - Ready for Codex review.
+
+## Session 01 Repair r1 — Step-1 / D6
+
+- **Date**: 2026-11-05
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+
+### 1. Codex Review Analysis & Repair Scope
+
+Codex requested 5 specific repairs in `session-01-review.md`:
+
+1. Upgrade vulnerable `next@15.2.4` and `react@19.0.0` to patched stable releases addressing the December 2025 security advisories without moving to Next 16.
+2. Fix formatting regression and maintain clean working tree across checks.
+3. Report responsive viewports as `not_run` truthfully where headless browser checks cannot be executed.
+4. Expand `tailwind.config.ts` content scanning pattern to include `src/features`.
+5. Remove blanket `pnpm install --no-optional` from `README.md`; document standard installation and pnpm build scripts behavior.
+
+### 2. Implementation Decisions
+
+- **Security Patches**:
+  - Pinned `next`: `15.5.29` (latest stable Next 15 backport release, Nov 2026).
+  - Pinned `eslint-config-next`: `15.5.29` (matching Next version).
+  - Pinned `react`: `19.3.1` and `react-dom`: `19.3.1` (addressing React Server Components security advisory).
+  - Pinned `@types/react`: `19.3.0` and `@types/react-dom`: `19.3.0`.
+  - Maintained zero unallowlisted libraries; preserved `Next 15` constraints.
+- **Tailwind Scan**:
+  - Updated `tailwind.config.ts` content configuration from folder-specific paths to `"./src/**/*.{js,ts,jsx,tsx,mdx}"`, guaranteeing full coverage for `src/features` and components.
+- **README Guidance**:
+  - Replaced `pnpm install --no-optional` with standard `pnpm install`. Added note explaining `ERR_PNPM_IGNORED_BUILDS` on modern pnpm (v10+) with `pnpm approve-builds` or `pnpm install --ignore-scripts`.
+- **ESLint Build Warning Investigation**:
+  - Investigated Next.js `runLintCheck` warning during build. In Next 15 flat config mode, Next's internal linter queries `calculateConfigForFile` on `package.json`. Because ESLint 9 does not match `.json` files under JS/TS rules, `package.json` config returns undefined for plugins, triggering the warning. However, source files (`src/app/page.tsx`) correctly resolve `@next/next` rules, and `pnpm lint` (`eslint .`) exits 0 with 0 errors.
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0.
+- `pnpm lint`: Exit code 0.
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled successfully).
+- `pnpm format:check`: Exit code 0.
