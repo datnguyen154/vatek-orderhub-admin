@@ -65,4 +65,10 @@ pnpm format:check
 - **React**: React 19 Server Components by default
 - **TypeScript**: Strict mode enabled (`strict: true`), path alias `@/*` -> `src/*`
 - **Styling**: Tailwind CSS 3.4 with PostCSS & Autoprefixer, system font stack initially
+- **Visual Design Baseline**: Detailed in [`docs/design-system.md`](docs/design-system.md)
 - **Coordinator & Governance**: Multi-agent orchestration managed under `../.agents/`
+
+## Deployment & Delivery
+
+- **Delivery Guide & Pipeline**: See [`docs/delivery.md`](docs/delivery.md) for branch strategy, PR checklist, and Vercel preview deployment guidelines.
+- **Workflow**: Feature branches (`feat/*`) -> Pull Request targeting `main` -> Vercel Preview Deploy -> Verification Suite -> Review & Merge.
