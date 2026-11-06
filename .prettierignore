@@ -5,3 +5,9 @@ dist
 coverage
 pnpm-lock.yaml
 *.tsbuildinfo
+
+# Vendored UI/UX search resources; format the local SKILL.md separately.
+.agents/skills/ui-ux-pro-max/data/
+.agents/skills/ui-ux-pro-max/scripts/
+.agents/skills/ui-ux-pro-max/references/quick-reference.md
+.agents/skills/ui-ux-pro-max/references/pro-rules.md

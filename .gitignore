@@ -22,3 +22,8 @@ Thumbs.db
 .vercel/
 .vscode/
 .idea/
+
+# Test artifacts
+/.playwright-cli/
+/output/
+
