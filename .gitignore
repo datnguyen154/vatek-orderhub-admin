@@ -27,3 +27,7 @@ Thumbs.db
 /.playwright-cli/
 /output/
 
+# Codegraph index
+/.codegraph/
+
+

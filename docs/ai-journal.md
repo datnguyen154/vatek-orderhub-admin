@@ -92,3 +92,129 @@ Codex requested 5 specific repairs in `session-01-review.md`:
 - `pnpm lint`: Exit code 0.
 - `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled successfully).
 - `pnpm format:check`: Exit code 0.
+
+## Session 02 — Step-2 / D6: Design tokens và quy ước thiết kế
+
+- **Date**: 2026-11-06
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: 8a657ea5a1eeca23ff8bbc9fc61e277fe2ef09cd
+
+### 1. Task & Prompt Summary
+
+Execute Session 02 (step-2 / D6) to establish the sole visual design baseline without Figma in `docs/design-system.md`, configure semantic design tokens in Tailwind CSS 3.4 and CSS variables (`globals.css`, `tailwind.config.ts`), add allowlisted utility libraries (`clsx`, `tailwind-merge`, `class-variance-authority`), provide `src/lib/utils.ts` with `cn`, update `src/app/layout.tsx` and `src/app/page.tsx` to use semantic tokens, and smoke test the placeholder across 4 viewports using real-browser Playwright MCP tooling.
+
+### 2. Selective Design Research (UI/UX Pro Max)
+
+Executed selective local searches via `.agents/skills/ui-ux-pro-max/scripts/search.py` from capstone root:
+
+- `python -B .agents/skills/ui-ux-pro-max/scripts/search.py "B2B operations dashboard" --domain product -n 3`
+  - _Accepted_: Swiss style minimalism, professional blue + neutral gray palette, high-density operations layout.
+  - _Rejected_: SaaS marketing landing hero showcase, glassmorphism, and feature CTA repeat.
+- `python -B .agents/skills/ui-ux-pro-max/scripts/search.py "accessibility" --domain color -n 3`
+  - _Accepted (Adapted)_: High-contrast accessible pairings (`#1D4ED8` primary with 6.7:1 white text contrast, `#DC2626` destructive with 4.8:1 white text contrast).
+- `python -B .agents/skills/ui-ux-pro-max/scripts/search.py "B2B order management dashboard" --design-system -p "OrderHub Admin Console" -f markdown`
+  - _Rejected_: Education teal/amber palette (`#0D9488`), Cormorant Garamond serif headings, Crimson Pro body with external Google Fonts `@import`, and GSAP motion (`--motion`). Replaced with project-approved system sans font stack, restrained blue primary, and native CSS reduced-motion transitions.
+
+### 3. Architecture & Design Choices
+
+- **Allowlisted Libraries**:
+  - Pinned exact versions compatible with Tailwind 3.4 and React 19:
+    - `clsx`: `2.1.1`
+    - `tailwind-merge`: `2.6.0` (Tailwind 3.4 compatible; avoiding v3.x breaking changes intended for Tailwind 4)
+    - `class-variance-authority`: `0.7.1`
+  - Zero unallowlisted libraries added; lockfile updated via `pnpm add -E`.
+- **Token Architecture**:
+  - Defined CSS custom properties in `src/app/globals.css` with RGB triplets to enable Tailwind opacity modifiers (`<alpha-value>`).
+  - Mapped semantic colors in `tailwind.config.ts`: `background`, `foreground`, `surface`, `muted`, `border`, `primary`, `destructive`, `success`, `warning`, `focus`.
+  - Mapped typography roles: `page-title` (24px/600), `section-title` (18px/600), `body` (14px/400), `body-medium` (14px/500), `caption` (12px/500).
+  - Centralized 4px spacing scale, radii (`sm: 4px`, `md: 6px`, `lg: 8px`), elevations (`shadow-sm`, `shadow-md`, `shadow-lg`), and component dimensions (`sidebar: 16rem`, `topbar: 3.5rem`, control heights: 32px, 40px, 44px).
+  - Documented default Tailwind breakpoints (`sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`, `2xl: 1536px`) and 4 verification viewports (`375px`, `768px`, `1280px`, `1920px`).
+- **Utility Helper**:
+  - Created `src/lib/utils.ts` exporting `cn(...inputs: ClassValue[]): string` combining `clsx` and `twMerge`.
+- **Server Components & Semantic Layout**:
+  - `src/app/layout.tsx`: Updated to use `bg-background text-foreground antialiased font-sans`. Maintained Server Component.
+  - `src/app/page.tsx`: Replaced hardcoded slate utilities with semantic tokens (`bg-surface`, `border-border`, `text-page-title text-foreground`, `text-body text-muted-foreground`, `bg-muted text-caption`). Zero raw hex or arbitrary Tailwind utilities.
+- **Visual Baseline without Figma**:
+  - Created `docs/design-system.md` with visual principles, search synthesis, token mapping table, descriptive wireframes for Login, App Shell, Component Catalogue, and Orders list, UI states, and a 5-pillar visual review rubric.
+
+### 4. Contrast & Accessibility Foundation
+
+- Evaluated relative luminance and contrast ratios using WCAG 2.1 formulas:
+  - `foreground` on `background`: 17.06:1 (AAA)
+  - `foreground` on `surface`: 17.85:1 (AAA)
+  - `muted-foreground` on `muted`: 6.92:1 (AA / AAA for large)
+  - `muted-foreground` on `surface`: 7.58:1 (AAA)
+  - `primary-foreground` on `primary`: 6.70:1 (AA)
+  - `destructive-foreground` on `destructive`: 4.83:1 (AA)
+  - `success-foreground` on `success`: 5.02:1 (AA)
+  - `warning-foreground` on `warning`: 5.02:1 (AA)
+  - `focus` ring on `background` and `surface`: 6.41:1 / 6.70:1 (non-text UI >= 3:1)
+- Added `:focus-visible` 2px solid ring with 2px offset.
+- Added `@media (prefers-reduced-motion: reduce)` reset.
+- Static placeholder has no interactive controls: keyboard interaction criterion recorded as `not_applicable`.
+
+### 5. Corrections & Adjustments
+
+- Prettier check flagged line formatting differences in `src/app/globals.css`, `src/app/page.tsx`, and `tailwind.config.ts`. Ran `pnpm exec prettier --write` to align with project Prettier configuration. Re-ran `pnpm format:check` to confirm 100% compliance.
+- Initiated local verification server and executed real-browser smoke testing via official Playwright MCP server across all 4 target viewports (375x812, 768x1024, 1280x800, 1920x1080).
+
+### 6. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (strict mode, zero errors).
+- `pnpm lint`: Exit code 0 (`eslint .` evaluated all JS/TS files with zero errors).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully).
+- `pnpm format:check`: Exit code 0 (all files compliant with Prettier).
+- Playwright MCP Smoke Test: Pass at 375px, 768px, 1280px, 1920px. All screenshots inspected in `output/playwright/session-02/`. Zero document-level horizontal overflow (`scrollWidth === clientWidth`).
+
+### 7. Remaining Limitations & Next Steps
+
+- Application placeholder only; base components, Login, App Shell, Catalogue, and Orders will be built in subsequent sessions (Sessions 04–09).
+- Ready for Codex review.
+
+## Session 02 Repair r1 — Step-2 / D6: Control Border Contrast & Spacing Alignment
+
+- **Date**: 2026-11-06
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: 8a657ea5a1eeca23ff8bbc9fc61e277fe2ef09cd
+
+### 1. Codex Review Analysis & Repair Scope
+
+Codex requested three repairs in `.agents/session-02-review.md`:
+
+1. **Functional control border contrast threshold (< 3:1)**:
+   - Initial `border` (`#E2E8F0`) measured 1.23:1 on white and 1.18:1 on canvas; `border-hover` (`#CBD5E1`) measured 1.48:1 on white and 1.42:1 on canvas. Both fell below the 3:1 WCAG 2.1 Non-text Contrast (1.4.11) threshold required for interactive control boundaries.
+   - _Repair_: Introduced explicit functional control border tokens `control-border` (`#64748B`, slate-500: 4.76:1 on white, 4.55:1 on canvas) and `control-border-hover` (`#334155`, slate-700: 10.35:1 on white, 9.90:1 on canvas). Retained `#E2E8F0` and `#CBD5E1` strictly for non-essential decorative dividers/structural separators. Updated `src/app/globals.css`, `tailwind.config.ts`, and `docs/design-system.md`.
+2. **Spacing guideline 4px-grid consistency**:
+   - `docs/design-system.md` table 3.2 erroneously cited `py-0.5` (2px in Tailwind) as an example of Step 1 (4px).
+   - _Repair_: Removed `py-0.5`, updated example to `py-1 px-2` (4px vertical, 8px horizontal), and explicitly formalized the rule that all authored spacing must be integer multiples of 4px; fractional utilities (`p-0.5`, `p-1.5`, `p-2.5`, etc.) are forbidden.
+3. **Evidence inventory clarification**:
+   - Because `/output/` is ignored by `.gitignore`, screenshots/results in `output/playwright/` are local evidence rather than Git untracked files.
+   - _Repair_: Correctly labeled them in `docs/handoffs/session-02-r1.md` as ignored local evidence retained on disk for review, preserving untracked file status only for versionable files.
+
+### 2. Implementation Decisions & Recalculated Contrasts
+
+- **CSS Variables (`globals.css`)**:
+  - Added `--color-control-border: 100 116 139;` (`#64748B`)
+  - Added `--color-control-border-hover: 51 65 85;` (`#334155`)
+- **Tailwind Mapping (`tailwind.config.ts`)**:
+  - Mapped `colors.control-border` and `colors.border.control` / `colors.border.control-hover` to `--color-control-border` and `--color-control-border-hover`.
+- **Contrast Recalculation (WCAG 2.1 standard luminance)**:
+  - `control-border` (`#64748B`): vs canvas = **4.55:1**, vs white = **4.76:1** (exceeds 3:1).
+  - `control-border-hover` (`#334155`): vs canvas = **9.90:1**, vs white = **10.35:1** (exceeds 3:1).
+  - `border` (decorative `#E2E8F0`): vs canvas = 1.18:1, vs white = 1.23:1 (decorative).
+  - `border-hover` (decorative `#CBD5E1`): vs canvas = 1.42:1, vs white = 1.48:1 (decorative).
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (strict mode, zero errors).
+- `pnpm lint`: Exit code 0 (zero errors/warnings).
+- `pnpm build`: Exit code 0 (static pages generated cleanly).
+- `pnpm format:check`: Exit code 0 (Prettier formatting compliant across all files).
+- Playwright MCP: Responsive smoke test confirmed across 375, 768, 1280, 1920px viewports with zero document horizontal overflow (`clientWidth === scrollWidth`). Fresh evidence saved under `output/playwright/session-02-r1/`.
+
+### 4. Remaining Limitations & Next Steps
+
+- `docs/handoffs/session-02.md` preserved as history; repair documented in `docs/handoffs/session-02-r1.md`.
+- Ready for Codex review.
