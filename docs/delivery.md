@@ -8,7 +8,7 @@ This document records the actual GitHub and Vercel delivery state for the capsto
 | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | GitHub repository                          | [datnguyen154/vatek-orderhub-admin](https://github.com/datnguyen154/vatek-orderhub-admin) |
 | Production branch                          | `main`                                                                                    |
-| Local `main` / cached `origin/main` at last check | `6ba3307f02d5d999a39fda7c0e666052aaefa3e7` — PR #2 merge                             |
+| Local `main` / cached `origin/main` at last check | `cc7ad42b5b01d1883f35de832adee0f2b210e83a` — PR #3 merge                             |
 | Production URL                             | [https://vatek-orderhub-admin.vercel.app/](https://vatek-orderhub-admin.vercel.app/)      |
 | Hosting                                    | Vercel                                                                                    |
 
@@ -20,6 +20,7 @@ Changes are delivered through focused feature or documentation branches and revi
 | ----------------------------------------------------------------- | -------------------------- | ------ | ------------------------------------------ |
 | [#1](https://github.com/datnguyen154/vatek-orderhub-admin/pull/1) | D6 delivery setup          | Merged | `55d627914b778d75b2c7d0992f7e6d6eefb49c91` |
 | [#2](https://github.com/datnguyen154/vatek-orderhub-admin/pull/2) | D7 responsive login screen | Merged | `6ba3307f02d5d999a39fda7c0e666052aaefa3e7` |
+| [#3](https://github.com/datnguyen154/vatek-orderhub-admin/pull/3) | D8 base UI primitives and modal | Merged | `cc7ad42b5b01d1883f35de832adee0f2b210e83a` |
 
 The D7 feature commit is `2b7f8d9f569454b19f4b5af82997d0a6f4369a69`; it is an ancestor of the PR #2 merge commit.
 
@@ -30,8 +31,9 @@ The D7 feature commit is `2b7f8d9f569454b19f4b5af82997d0a6f4369a69`; it is an an
 | Production  | [vatek-orderhub-admin.vercel.app](https://vatek-orderhub-admin.vercel.app/)                          | `55d627914b778d75b2c7d0992f7e6d6eefb49c91` (`main` at the time, SHA reported by the user)                         | Live page opened in a browser on 2026-11-06. It renders the OrderHub Admin Console and the D6 design-token baseline. The source SHA is user-reported; Vercel deployment metadata was not independently available.                            |
 | D7 preview  | [Login preview](https://vatek-orderhub-admin-git-feat-login-screen-dat-s-projects9.vercel.app/login) | `2b7f8d9f569454b19f4b5af82997d0a6f4369a69` on `feat/login-screen` (SHA and successful build reported by the user) | The preview URL was opened on 2026-11-06, but Vercel redirected the unauthenticated browser to its sign-in/SSO page. The deployed login page could not be visually or interactively reviewed, so preview smoke verification remains pending. |
 | D8 / Session 05 preview | [Login preview](https://vatek-orderhub-admin-git-feat-base-components-dat-s-projects9.vercel.app/login) | `12a70e2f9909f5205a9a31026c4aac8048d56aae` on `feat/base-components` (local HEAD and cached upstream tracking ref match; deployment SHA/Ready reported by user) | Opened on 2026-11-09; Login rendered. No horizontal overflow at 375/768/1280/1920px. Keyboard order email → password → submit and reverse Shift+Tab worked; password showed a visible 2px focus outline/ring. At 375px the browser client/scroll widths were both 360px (viewport 375px, scrollbar accounts for the difference); at the other widths client and scroll widths matched. This is a Login regression smoke only: the route does not yet consume the new primitives, so their runtime behavior remains for Session 06. Vercel deployment metadata was not independently available. |
+| D9 / Session 06 preview | [Component catalogue](https://vatek-orderhub-admin-git-feat-component-eae200-dat-s-projects9.vercel.app/components) | `abd54ff999eb80058e0020e384bbb6781099d03a` on `feat/component-catalogue` (local HEAD and cached upstream tracking ref match; deployment SHA/Ready reported by user) | Opened on 2026-11-09; `/components` rendered the catalogue and `/login` rendered the form. Both routes had no horizontal overflow at 375/768/1280/1920px. Login Tab/Shift+Tab, Button Space activation, native Select ArrowDown, and Modal Enter/focus containment/Escape/focus restoration passed; no console errors. Fresh GitHub/Vercel metadata was unavailable because `git fetch origin` failed (`getaddrinfo() thread failed to start`); preview Ready/SHA are user-reported. |
 
-The live production page currently corresponds to the D6 baseline, while cached `origin/main` is at the D7 merge. The D7 preview remains historically blocked by Vercel SSO. The Session 05 preview is accessible and has the limited Login smoke recorded above. `git fetch origin` failed during this review (`getaddrinfo() thread failed to start`), so cached remote refs could not be refreshed; the Session 05 branch ref already matched the reported commit SHA.
+The live production page currently corresponds to the D6 baseline, while cached `origin/main` is at the D8 PR #3 merge. The D7 preview remains historically blocked by Vercel SSO. Session 05 and Session 06 previews are accessible and have the limited route-specific smoke recorded above. `git fetch origin` failed during the latest review (`getaddrinfo() thread failed to start`), so cached remote refs could not be refreshed; the local feature branch tracking ref matched the reported Session 06 commit SHA.
 
 ### Preview review protocol
 
@@ -41,7 +43,7 @@ For each materially new preview, record its URL, branch, full source SHA, review
 
 The D6 delivery session reported successful runs of `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm build`. These are historical results for that session, not a verification of the current working tree or the deployed D7 UI.
 
-The D7 review later found that the repository-wide `pnpm format:check` was affected by CRLF line endings in `docs/delivery.md` and `docs/handoffs/session-03.md`. A documentation refresh does not imply that all repository checks have been rerun. Record command, date, and exit status in the relevant session handoff when checks are run.
+The D7 and Session 06 reviews found that the repository-wide `pnpm format:check` fails on CRLF line endings in `docs/delivery.md` and `docs/handoffs/session-03.md`; all Session 06 touched files passed scoped Prettier. Session 06 typecheck, lint, production build, scoped Prettier, and diff-check passed on 2026-11-09. The production build emitted a non-blocking Next.js ESLint-plugin detection warning. A documentation refresh does not imply that all repository checks have been rerun. Record command, date, and exit status in the relevant session handoff when checks are run.
 
 Run from the capstone root before a new PR:
 
