@@ -1,145 +1,78 @@
-# OrderHub Admin Console — Delivery & Deployment Pipeline
+# OrderHub Admin Console — Delivery & Deployment
 
-This document defines the delivery protocol, Pull Request (PR) workflow, and Vercel preview deployment guidelines for the OrderHub Admin Console capstone project, fulfilling the Day 6 (D6 / Step 3) delivery baseline requirements.
+This document records the actual GitHub and Vercel delivery state for the capstone, plus the checks still needed before a preview can be accepted. Deployment facts below are dated **2026-11-06**; update this record when a newer preview is reviewed.
 
----
+## 1. Repository and Branching
 
-## 1. Repository & Branching Strategy
+| Property                                   | Current value                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| GitHub repository                          | [datnguyen154/vatek-orderhub-admin](https://github.com/datnguyen154/vatek-orderhub-admin) |
+| Production branch                          | `main`                                                                                    |
+| Local `main` / `origin/main` at last check | `6ba3307f02d5d999a39fda7c0e666052aaefa3e7` — PR #2 merge                                  |
+| Production URL                             | [https://vatek-orderhub-admin.vercel.app/](https://vatek-orderhub-admin.vercel.app/)      |
+| Hosting                                    | Vercel                                                                                    |
 
-| Property                        | Value                                                      | Description                                                                           |
-| ------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **Remote Repository**           | `https://github.com/datnguyen154/vatek-orderhub-admin.git` | Official capstone GitHub repository                                                   |
-| **Default / Production Branch** | `main`                                                     | Production-ready codebase; baseline commit `a5ae78a7c2b57163ebec0412defccf877a805e43` |
-| **Delivery Feature Branch**     | `feat/first-pr-delivery`                                   | Dedicated branch created from `main` for D6 delivery preparation                      |
-| **Target Merge Base**           | `main`                                                     | All feature branches target `main` via reviewed Pull Requests                         |
+Changes are delivered through focused feature or documentation branches and reviewed Pull Requests targeting `main`. The user reviews the diff and performs commits, pushes, and merges. Do not commit deployment secrets.
 
-### Branching Rules
+## 2. Merged Pull Requests
 
-1. **No Direct Commits to Main**: All features, primitives, and documentation must flow through dedicated feature branches (`feat/*`, `docs/*`, `fix/*`).
-2. **Atomic Delivery**: Each branch addresses bounded session task scopes defined in `.agents/sessions.md` and `.agents/tasks.json`.
-3. **No Unreviewed Merges**: Merging into `main` requires passing automated verification checks, preview smoke verification, and user authorization.
+| PR                                                                | Change                     | Status | Merge commit                               |
+| ----------------------------------------------------------------- | -------------------------- | ------ | ------------------------------------------ |
+| [#1](https://github.com/datnguyen154/vatek-orderhub-admin/pull/1) | D6 delivery setup          | Merged | `55d627914b778d75b2c7d0992f7e6d6eefb49c91` |
+| [#2](https://github.com/datnguyen154/vatek-orderhub-admin/pull/2) | D7 responsive login screen | Merged | `6ba3307f02d5d999a39fda7c0e666052aaefa3e7` |
 
----
+The D7 feature commit is `2b7f8d9f569454b19f4b5af82997d0a6f4369a69`; it is an ancestor of the PR #2 merge commit.
 
-## 2. First PR (Pull Request) Status
+## 3. Deployment Record
 
-| Parameter            | Status / Value           | Details / Verification Evidence                                                                                                   |
-| -------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Source Branch**    | `feat/first-pr-delivery` | Created locally from `main` at `a5ae78a`                                                                                          |
-| **Target Base**      | `main`                   | Remote tracking branch `origin/main`                                                                                              |
-| **PR Status**        | `pending` / `blocked`    | Feature branch prepared locally; remote push and PR creation pending user commit, push, and PR creation                           |
-| **PR Number / URL**  | `pending`                | To be assigned upon GitHub PR submission by user                                                                                  |
-| **Head Commit SHA**  | `pending`                | Local working tree left uncommitted for Codex review and user commit; baseline HEAD is `a5ae78a7c2b57163ebec0412defccf877a805e43` |
-| **Remote PR Count**  | `0`                      | Verified via GitHub REST API (`https://api.github.com/repos/datnguyen154/vatek-orderhub-admin/pulls?state=all` -> Count: 0)       |
-| **PR Review Status** | `pending`                | Awaits user review post-submission                                                                                                |
-| **Merge Status**     | `pending`                | Never merge without preview verification                                                                                          |
+| Environment | URL                                                                                                  | Source commit / branch                                                                                            | Status and evidence                                                                                                                                                                                                                          |
+| ----------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Production  | [vatek-orderhub-admin.vercel.app](https://vatek-orderhub-admin.vercel.app/)                          | `55d627914b778d75b2c7d0992f7e6d6eefb49c91` (`main` at the time, SHA reported by the user)                         | Live page opened in a browser on 2026-11-06. It renders the OrderHub Admin Console and the D6 design-token baseline. The source SHA is user-reported; Vercel deployment metadata was not independently available.                            |
+| D7 preview  | [Login preview](https://vatek-orderhub-admin-git-feat-login-screen-dat-s-projects9.vercel.app/login) | `2b7f8d9f569454b19f4b5af82997d0a6f4369a69` on `feat/login-screen` (SHA and successful build reported by the user) | The preview URL was opened on 2026-11-06, but Vercel redirected the unauthenticated browser to its sign-in/SSO page. The deployed login page could not be visually or interactively reviewed, so preview smoke verification remains pending. |
 
----
+The live production page currently corresponds to the D6 baseline, while `main` has advanced through D7. The D7 preview build was reported successful, but its app route remains protected from the available review session. Do not describe the D7 preview as smoke-tested until the page itself is accessible and reviewed.
 
-## 3. Vercel Preview Deployment Status
+### Required update after the next real preview review
 
-| Parameter               | Status / Value        | Details / Verification Evidence                                                                                                            |
-| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Deployment Platform** | Vercel                | Next.js 15 App Router optimized hosting                                                                                                    |
-| **Deployment Status**   | `pending` / `not_run` | Vercel project connection and automated preview trigger pending user account configuration                                                 |
-| **Remote Deployments**  | `0 records`           | Verified via GitHub REST API (`https://api.github.com/repos/datnguyen154/vatek-orderhub-admin/deployments` -> 0 GitHub deployment records) |
-| **Deployment SHA**      | `pending`             | Will reflect the committed head SHA of the feature branch                                                                                  |
-| **Preview URL**         | `pending`             | Unverified candidate-domain probe to `https://vatek-orderhub-admin.vercel.app` returned HTTP 404; actual preview URL pending Vercel deploy |
-| **HTTP Verification**   | `not_run`             | Requires live preview URL from active Vercel deployment                                                                                    |
-| **Browser Smoke Check** | `not_run`             | Requires live preview URL; will execute via Playwright MCP across 375, 768, 1280, 1920px viewports                                         |
+When an actual Vercel preview is accessible, update this section with its exact URL, branch, full deployment SHA, review date, and outcome. Open the deployed app route and record responsive results at **375px, 768px, 1280px, and 1920px**, plus keyboard/focus checks for affected controls. If Vercel protection blocks access, record the redirect and leave the UI smoke check pending. Repeat this update for each materially new preview rather than reusing an earlier deployment's evidence.
 
----
+## 4. Local Verification Record
 
-## 4. Local Quality & Build Verification
+The D6 delivery session reported successful runs of `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm build`. These are historical results for that session, not a verification of the current working tree or the deployed D7 UI.
 
-Before any PR submission or deployment, the following verification suite must pass with exit code `0` from the repository root:
+The D7 review later found that the repository-wide `pnpm format:check` was affected by CRLF line endings in `docs/delivery.md` and `docs/handoffs/session-03.md`. A documentation refresh does not imply that all repository checks have been rerun. Record command, date, and exit status in the relevant session handoff when checks are run.
 
-| Command                  | Purpose                                              | Result / Observed Exit Code                                 |
-| ------------------------ | ---------------------------------------------------- | ----------------------------------------------------------- |
-| `pnpm exec tsc --noEmit` | Strict TypeScript compilation check                  | `Exit code 0` (0 errors, strict mode enabled)               |
-| `pnpm lint`              | ESLint 9 flat configuration rule validation          | `Exit code 0` (0 errors, 0 warnings)                        |
-| `pnpm build`             | Production Next.js compilation & static optimization | `Exit code 0` (Static pages `/` and `/_not-found` compiled) |
-| `pnpm format:check`      | Prettier code style conformance verification         | `Exit code 0` (All matched files use Prettier style)        |
-
----
-
-## 5. Security & Secrets Management Policy
-
-- **Zero Secrets in Source Control**: Secrets, API keys, tokens, or credential files must never be staged or committed.
-- **Gitignore Protection**: `.env.local`, `.env.*.local`, `.codegraph/`, `node_modules/`, `.next/`, and `output/` are explicitly ignored.
-- **Example Environment**: `.env.example` contains only documented non-sensitive placeholder variables.
-- **Server Boundary Isolation**: Any future server secrets (such as the D9 demo session cookie secret) are restricted to Server Components and server-side utilities (`src/lib/auth/`), never imported into Client Components (`"use client"`).
-
----
-
-## 6. Session Delivery Boundaries & Prerequisites
-
-As specified in project rules (`.agents/rules.md` Rules 15 & 21) and the Session 03 prompt:
-
-1. **Session Scope & Execution Boundary**: Under the project coordination protocol, changes require Codex review before the user stages and commits. Furthermore, the Session 03 prompt specifically instructed the agent not to run `git add`, `git commit`, `git push`, `git merge`, or deployment commands in this session, leaving all work uncommitted for review.
-2. **Environment Tooling & Credentials**: In this execution session, neither `gh` (GitHub CLI) nor `vercel` CLI was found in the environment PATH, and no write-capable credentials for pushing to the remote repository or deploying to Vercel were configured or available to the agent.
-3. **Prerequisites for D6 Gate Completion**:
-   - The user reviews the prepared local diff and commits the changes on `feat/first-pr-delivery`.
-   - The user pushes `feat/first-pr-delivery` to GitHub.
-   - The user creates the First PR targeting `main`.
-   - Vercel builds the preview deployment and produces an active preview URL.
-   - HTTP response verification and Playwright smoke testing are executed against the actual preview URL.
-   - The user reviews and merges the PR into `main`.
-
----
-
-## 7. Operator Runbook (Step-by-Step for User)
-
-Follow these steps to complete the remote delivery lifecycle:
-
-### Step 1: Review Local Working Tree
-
-Review the diff prepared by Antigravity:
+Run from the capstone root before a new PR:
 
 ```bash
-git status
-git diff
+pnpm exec tsc --noEmit
+pnpm lint
+pnpm build
+pnpm format:check
 ```
 
-### Step 2: Stage and Commit the Delivery Preparation
+For a browser review, use the project's Playwright MCP when available and capture evidence for the deployed URL and required viewport widths. A successful Vercel build alone does not establish responsive or accessibility acceptance.
 
-Commit the delivery documentation and handoff on the feature branch:
+## 5. Security and Environment
 
-```bash
-git add README.md docs/delivery.md docs/ai-journal.md docs/handoffs/session-03.md
-git commit -m "docs(delivery): prepare first PR and Vercel preview deployment pipeline"
-```
+- Keep secrets, API keys, access tokens, and credential files out of source control.
+- `.env.local`, `.env.*.local`, `node_modules/`, `.next/`, `.codegraph/`, and local `output/` evidence are ignored by Git.
+- `.env.example` may contain documented non-sensitive placeholders only.
+- Keep server secrets in server-only modules. Do not import them into Client Components.
 
-### Step 3: Push Feature Branch to GitHub
+## 6. Operator Runbook
 
-```bash
-git push -u origin feat/first-pr-delivery
-```
+1. Review the branch and diff:
 
-### Step 4: Open Pull Request on GitHub
-
-Open a Pull Request from `feat/first-pr-delivery` into `main` at:
-`https://github.com/datnguyen154/vatek-orderhub-admin/compare`
-
-- Title: `docs(delivery): prepare first PR and Vercel preview deployment pipeline`
-- Description: Link to verification results and acceptance criteria.
-
-### Step 5: Configure Vercel Project & Deploy Preview
-
-1. Log in to [Vercel Dashboard](https://vercel.com).
-2. Import project `datnguyen154/vatek-orderhub-admin`.
-3. Set Framework Preset: **Next.js**.
-4. Deploy the preview environment for branch `feat/first-pr-delivery`.
-
-### Step 6: Verify Preview & Record Evidence
-
-1. Once deployed, verify HTTP response:
    ```bash
-   curl -I https://<preview-domain>.vercel.app
+   git status --short --branch
+   git diff --check
+   git diff
    ```
-2. Run Playwright smoke check against the preview URL across 375, 768, 1280, 1920px viewports.
-3. Update `docs/delivery.md` with actual PR URL, deployment URL, and commit SHA.
 
-### Step 7: Merge PR into Main
-
-Once all checks and preview smoke tests are confirmed, merge the PR into `main`.
+2. Run the verification commands listed above and record their actual results.
+3. The user stages and commits the reviewed changes, pushes the feature branch, and opens a PR targeting `main`.
+4. Confirm Vercel has produced a preview for the PR. Record the preview URL, source SHA, and build result in this document.
+5. Open the actual preview URL. If it redirects to Vercel authentication, arrange authorized access before the UI review; do not treat the redirect as a successful app smoke check.
+6. Review affected routes at 375px, 768px, 1280px, and 1920px, including keyboard navigation and visible focus. Record what was actually checked and any remaining blocker.
+7. After review and user approval, merge the PR. Confirm the resulting `main` merge SHA and update the production deployment record after Vercel deploys it.
