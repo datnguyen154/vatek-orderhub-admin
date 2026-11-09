@@ -664,3 +664,113 @@ Codex provided one focused review item for the final repair round (r2/2):
 ### 4. Remaining Limitations & Next Steps
 
 - This concludes Session 05 Repair r2/2 (final repair round). Uncommitted working tree prepared for Codex review.
+
+## Session 06 — Step-7 / D8.3: Catalogue và tích hợp Login
+
+- **Date**: 2026-11-09
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `cc7ad42b5b01d1883f35de832adee0f2b210e83a`
+- **Branch**: `feat/component-catalogue`
+
+### 1. Task & Prompt Summary
+
+Execute Session 06 (step-7 / D8.3) to:
+
+1. Verify Git preflight: ensure commit `12a70e2f9909f5205a9a31026c4aac8048d56aae` is an ancestor of `origin/main` (verified clean, exit code 0 via `git merge-base --is-ancestor`), fast-forward main, and create branch `feat/component-catalogue`.
+2. Construct the `/components` component catalogue presenting all six base primitives (`Button`, `Input`, `Select`, `Badge`, `Card`, `Modal`) across their variants, sizing scales, interactive states, and dialog demos, keeping the route root as a Server Component.
+3. Refactor the `/login` screen and `LoginForm` to consume the approved base primitives (`Button`, `Input`, `Card`, `Badge`) without introducing secondary class systems or regressions.
+4. Verify accessibility, responsive behavior (375px, 768px, 1280px, 1920px), focus containment, Escape dismissal, and focus return via Playwright real browser automation.
+
+### 2. Architecture & Design Choices
+
+- **Server Component by Default (`src/app/components/page.tsx`)**:
+  - Maintained `src/app/components/page.tsx` as a pure Server Component. Static variant showcases (Buttons, Inputs, Selects, Badges, Cards) render statically on the server.
+  - Interactive sandboxes and Radix Dialog demonstrations were isolated into client boundary `src/features/catalogue/components/component-examples.tsx` (`"use client"`).
+- **Component Catalogue Layout & Density**:
+  - Organized into six semantic `<section>` blocks with accessible heading identifiers (`h2` with `id` and `aria-labelledby`).
+  - Utilized responsive Tailwind grids (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`) strictly adhering to the 4px token spacing scale (`p-4`, `p-6`, `space-y-4`, `space-y-6`, `gap-3`, `gap-4`). Zero arbitrary bracket classes.
+  - Showcased all variants, sizes, and states:
+    - `Button`: `primary`, `secondary`, `ghost`, `destructive`; `sm`, `md`, `lg`; default, hover, focus-visible, disabled, loading (`loading={true}` with vestibular-safe spinner).
+    - `Input`: `default`, `error` (and `aria-invalid="true"`); `sm`, `md`, `lg`; default, placeholder, disabled, error with `aria-describedby` error associations.
+    - `Select`: `default`, `error`; `sm`, `md`, `lg`; default, disabled, error with accessible feedback.
+    - `Badge`: `neutral`, `success`, `warning`, `destructive`; `sm`, `md`, `lg`.
+    - `Card`: `default`, `muted`, `outline`; `sm`, `md`, `lg`; compound slots `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`.
+    - `Modal`: `default`, `destructive`, `muted`; `sm`, `md`, `lg`, `xl`; interactive dialog demos with required compile-time `title` and `description` props, focus containment, Escape key dismissal, and focus restoration.
+- **Login Integration**:
+  - In `src/features/auth/components/login-form.tsx`: Replaced raw `<input>` elements with `Input` primitive from `@/components/ui/input`, and raw `<button>` with `Button` primitive from `@/components/ui/button`. Used `Card` primitive for the demo mode guidance card. Maintained client validation, semantic labels, error associations, and auto-focusing the first invalid field.
+  - In `src/app/(auth)/login/page.tsx`: Replaced hardcoded form card container with `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, and `CardFooter`. Replaced introductory status pill with `Badge` primitive.
+
+### 3. Corrections & Adjustments
+
+- In `verify_session_06.js`, initially targeted `chromium_headless_shell-1252` which was superseded by `chromium-1254`. Adjusted executable path to `C:/Users/AD/AppData/Local/ms-playwright/chromium-1254/chrome-win64/chrome.exe` to run smoke automation against local Chromium binary.
+
+### 4. Verification Results
+
+- `git merge-base --is-ancestor 12a70e2f9909f5205a9a31026c4aac8048d56aae origin/main`: Exit code 0 (preflight ancestor verification confirmed).
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript strict mode, 0 errors).
+- `pnpm lint`: Exit code 0 (ESLint 9 evaluated all files with 0 errors and 0 warnings).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully; `/components` and `/login` static pages generated).
+- `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched files.
+- `git diff --check`: Exit code 0 (clean diff, no whitespace or line ending issues).
+- Playwright Browser Smoke (`output/playwright/session-06/`):
+  - `/login` viewports: 375x812, 768x1024, 1280x800, 1920x1080 -> `scrollWidth === clientWidth` (0 horizontal overflow).
+  - `/components` viewports: 375x812, 768x1024, 1280x800, 1920x1080 -> `scrollWidth === clientWidth` (0 horizontal overflow).
+  - Login form flow: keyboard navigation (Tab), validation trigger on invalid input, focus automatically directed to `#login-email`, loading state (`aria-busy="true"`), password cleared, and demo status notice displayed.
+  - Modal interaction: Enter key opens dialog, focus trapped inside dialog across 8 Tab presses, Escape key dismisses dialog, focus restored to invoking trigger button (`Open Default Modal (md)`). Destructive and muted modals verified.
+
+### 5. Remaining Limitations & Next Steps
+
+- This concludes Session 06 (step-7 / D8.3). Uncommitted working tree prepared for Codex review.
+
+## Session 06 Repair r1 — Step-7 / D8.3: 4px Grid Spacing, Typography Roles, and Login Heading Hierarchy
+
+- **Date**: 2026-11-09
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `cc7ad42b5b01d1883f35de832adee0f2b210e83a`
+- **Branch**: `feat/component-catalogue`
+
+### 1. Codex Review Analysis & Repair Scope (r1)
+
+Codex identified three concrete review findings in `.agents/sessions/session-06/reviews/initial-review.md`:
+
+1. **Fractional Spacing Violation**: `src/app/components/page.tsx:69` used `px-1.5 py-0.5` (6px and 2px), violating the 4px base grid (§3.2). Required correction: use 4px-compliant spacing (`px-2 py-1`), scan all touched Session 06 UI files for fractional spacing, and document findings.
+2. **Non-Semantic Typography Utilities**: `src/app/components/page.tsx` contained raw utility overrides (`text-base font-semibold` across 12 `CardTitle` instances, `text-sm font-semibold` on a sandbox heading, and `leading-relaxed` on intro paragraphs). Required correction: remove redundant overrides where primitive already supplies semantic role (`CardTitle` already renders `text-section-title`), map headings to semantic roles, eliminate raw text size/leading classes, and scan touched UI for any remaining non-semantic typography.
+3. **Login Heading Hierarchy Regression**: In `src/app/(auth)/login/page.tsx`, replacing the previous `<h2>` with `CardTitle` caused an outline regression from `h2` to `h3` (skipping level 2 after `h1`). Required correction: restore `<h2>` styled with semantic `text-section-title font-semibold text-foreground` within `CardHeader` without modifying `src/components/ui/card.tsx` (which is outside Session 06 scope).
+
+### 2. Implementation Decisions
+
+- **4px Grid Conformance Scan & Corrections**:
+  - `src/app/components/page.tsx:69`: Replaced `px-1.5 py-0.5` with `px-2 py-1` (8px and 4px).
+  - `src/app/components/page.tsx:560-581`: Replaced fractional dot dimensions `h-1.5 w-1.5` (6px) with `h-2 w-2` (8px, matching the 4px grid and existing status indicator dots in `login/page.tsx`).
+  - Ran comprehensive regex scan `[a-z]+-[0-9]+\.[0-9]+` across all touched files (`login/page.tsx`, `login-form.tsx`, `components/page.tsx`, `component-examples.tsx`): confirmed 0 fractional spacing occurrences remaining.
+- **Semantic Typography Role Restoration**:
+  - Removed all 13 instances of `className="text-base font-semibold"` from `<CardTitle>` in `src/app/components/page.tsx`, allowing the primitive to cleanly express its built-in `text-section-title` role.
+  - Replaced `<h3 className="text-sm font-semibold text-foreground mb-3">` with `<h3 className="text-section-title font-semibold text-foreground mb-3">` for the live form sandbox heading.
+  - Removed `leading-relaxed` overrides from `src/app/components/page.tsx` and `src/app/(auth)/login/page.tsx`, preserving strict adherence to `text-body` line-height (`1.25rem` / 20px).
+  - Updated badge text labels from raw utility references (`text-xs`, `text-sm`) to token names (`sm`, `md`, `lg`).
+  - Ran regex scan `text-(xs|sm|base|lg|xl|2xl|3xl)|leading-[a-z0-9]+` across all touched files: confirmed 0 raw text size/leading utilities remaining in authored code.
+- **Login Heading Hierarchy Restoration**:
+  - In `src/app/(auth)/login/page.tsx`: Restored `<h2 id="form-heading" className="text-section-title font-semibold text-foreground">Sign in to your account</h2>` inside `CardHeader`.
+  - Removed unused `CardTitle` import; preserved `Card`, `CardHeader`, `CardDescription`, `CardContent`, and `CardFooter`.
+  - Zero modifications to `src/components/ui/card.tsx`.
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript strict mode, 0 errors).
+- `pnpm lint`: Exit code 0 (ESLint 9 evaluated all files with 0 errors and 0 warnings).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully).
+- `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched files.
+- `pnpm format:check`: Exit code 1 (fails exclusively on pre-existing D6 CRLF files `docs/delivery.md` and `docs/handoffs/session-03.md`).
+- `git diff --check`: Exit code 0.
+- Playwright Browser Smoke (`output/playwright/session-06/`):
+  - Viewports: 375x812, 768x1024, 1280x800, 1920x1080 on both `/login` and `/components` -> `scrollWidth === clientWidth` (0 overflow).
+  - Heading Semantics: Verified on `/login`: `h1` = 1 ("OrderHub Admin Console"), `h2` = 1 ("Sign in to your account"), `h3` = 0. Outline is completely gap-free.
+  - Space Activation: Focused native `Button` ("Toggle Loading State: Inactive") and pressed `Space`; observed state toggled to "Toggle Loading State: Active".
+  - Native Select Keyboard: Focused native `<select>` (`#select-md`, initial value "all"), pressed `ArrowDown`; observed value switched to "pending" via native keyboard events.
+  - Modal Verification: Enter opened dialog, 8 Tab presses confirmed focus trapped inside dialog, Escape key dismissed dialog, focus restored to trigger button. Destructive and muted modals verified.
+
+### 4. Remaining Limitations & Next Steps
+
+- This concludes Session 06 Repair r1 (1/2). Uncommitted working tree prepared for Codex review.

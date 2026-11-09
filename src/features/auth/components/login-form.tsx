@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef, type FormEvent } from "react";
-import { cn } from "@/lib/utils";
+import { FormEvent, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import {
   validateLoginForm,
   type LoginFormValues,
@@ -112,7 +114,7 @@ export function LoginForm() {
         </div>
       )}
 
-      {/* Email input field */}
+      {/* Email input field with base primitive */}
       <div>
         <label
           htmlFor="login-email"
@@ -120,7 +122,7 @@ export function LoginForm() {
         >
           Email address
         </label>
-        <input
+        <Input
           ref={emailInputRef}
           id="login-email"
           name="email"
@@ -131,14 +133,6 @@ export function LoginForm() {
           disabled={isSubmitting}
           aria-invalid={errors.email ? "true" : "false"}
           aria-describedby={errors.email ? "login-email-error" : undefined}
-          className={cn(
-            "w-full h-control-md px-3 rounded-md border bg-surface transition-colors",
-            "border-control-border hover:border-control-border-hover",
-            "focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            errors.email &&
-              "border-destructive focus:border-destructive focus:ring-destructive"
-          ).concat(" text-body text-foreground")}
           placeholder="name@company.com"
         />
         {errors.email && (
@@ -152,7 +146,7 @@ export function LoginForm() {
         )}
       </div>
 
-      {/* Password input field */}
+      {/* Password input field with base primitive */}
       <div>
         <label
           htmlFor="login-password"
@@ -160,7 +154,7 @@ export function LoginForm() {
         >
           Password
         </label>
-        <input
+        <Input
           ref={passwordInputRef}
           id="login-password"
           name="password"
@@ -173,14 +167,6 @@ export function LoginForm() {
           aria-describedby={
             errors.password ? "login-password-error" : undefined
           }
-          className={cn(
-            "w-full h-control-md px-3 rounded-md border bg-surface transition-colors",
-            "border-control-border hover:border-control-border-hover",
-            "focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            errors.password &&
-              "border-destructive focus:border-destructive focus:ring-destructive"
-          ).concat(" text-body text-foreground")}
           placeholder="••••••••"
         />
         {errors.password && (
@@ -194,30 +180,22 @@ export function LoginForm() {
         )}
       </div>
 
-      {/* Submit button with pending state */}
+      {/* Submit button with base primitive */}
       <div>
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="lg"
           disabled={isSubmitting}
-          aria-busy={isSubmitting ? "true" : "false"}
-          className="w-full h-control-lg px-4 rounded-md bg-primary text-primary-foreground text-body-medium font-medium transition-colors hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          loading={isSubmitting}
+          className="w-full"
         >
-          {isSubmitting ? (
-            <>
-              <span
-                className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"
-                aria-hidden="true"
-              />
-              <span>Signing in...</span>
-            </>
-          ) : (
-            <span>Sign in to Console</span>
-          )}
-        </button>
+          {isSubmitting ? "Signing in..." : "Sign in to Console"}
+        </Button>
       </div>
 
-      {/* Demo guidance reference block */}
-      <div className="rounded-md border border-border bg-muted p-4 text-center">
+      {/* Demo guidance reference block with base Card primitive */}
+      <Card variant="muted" size="sm" className="text-center">
         <p className="text-caption font-medium text-foreground">
           Demo Mode Preview
         </p>
@@ -225,7 +203,7 @@ export function LoginForm() {
           Client validation only. Enter any valid email and 8+ character
           password.
         </p>
-      </div>
+      </Card>
     </form>
   );
 }

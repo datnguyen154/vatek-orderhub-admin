@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
 import { LoginForm } from "@/features/auth/components/login-form";
+import {
+  Card,
+  CardHeader,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
   title: "Sign in — OrderHub Admin Console",
@@ -17,20 +25,20 @@ export default function LoginPage() {
             className="lg:col-span-7 flex flex-col justify-center space-y-6"
           >
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary-muted bg-primary-muted/20 px-3 py-1 text-caption font-medium text-primary mb-3">
+              <Badge variant="neutral" size="md" className="mb-3">
                 <span
                   className="inline-block h-2 w-2 rounded-full bg-primary"
                   aria-hidden="true"
                 />
                 <span>B2B Console Preview</span>
-              </div>
+              </Badge>
               <h1
                 id="intro-heading"
                 className="text-page-title text-foreground font-semibold tracking-tight"
               >
                 OrderHub Admin Console
               </h1>
-              <p className="mt-3 text-body text-muted-foreground max-w-lg leading-relaxed">
+              <p className="mt-3 text-body text-muted-foreground max-w-lg">
                 Centralized B2B fulfillment, inventory orchestration, and
                 operational visibility across partner networks. Built for
                 high-density operational workflows.
@@ -138,7 +146,7 @@ export default function LoginPage() {
                 aria-hidden="true"
               />
               <span>
-                Session 04 UI Preview &bull; Authentication backend not
+                Session 06 UI Integration &bull; Authentication backend not
                 connected
               </span>
             </div>
@@ -149,26 +157,34 @@ export default function LoginPage() {
             aria-labelledby="form-heading"
             className="lg:col-span-5 flex justify-center"
           >
-            <div className="w-full max-w-md rounded-lg border border-border bg-surface p-6 sm:p-8 shadow-sm">
-              <div className="mb-6">
+            <Card
+              variant="default"
+              size="md"
+              className="w-full max-w-md sm:p-8"
+            >
+              <CardHeader className="p-0 mb-6">
                 <h2
                   id="form-heading"
                   className="text-section-title font-semibold text-foreground"
                 >
                   Sign in to your account
                 </h2>
-                <p className="mt-1 text-body text-muted-foreground">
+                <CardDescription className="mt-1 text-body text-muted-foreground">
                   Enter any demo credentials to test client-side validation.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="p-0">
+                <LoginForm />
+              </CardContent>
+
+              <CardFooter className="p-0 mt-6 justify-center">
+                <p className="text-center text-caption text-muted-foreground">
+                  Demo environment for capstone evaluation. No credentials are
+                  stored.
                 </p>
-              </div>
-
-              <LoginForm />
-
-              <p className="mt-6 text-center text-caption text-muted-foreground">
-                Demo environment for capstone evaluation. No credentials are
-                stored.
-              </p>
-            </div>
+              </CardFooter>
+            </Card>
           </section>
         </div>
       </div>
