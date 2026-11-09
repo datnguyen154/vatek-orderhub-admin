@@ -774,3 +774,198 @@ Codex identified three concrete review findings in `.agents/sessions/session-06/
 ### 4. Remaining Limitations & Next Steps
 
 - This concludes Session 06 Repair r1 (1/2). Uncommitted working tree prepared for Codex review.
+
+## Session 07 — Step-8 / D9: App shell và demo session guard
+
+- **Date**: 2026-11-09
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `40450285a854d68d1847e096417f54cff8c067e7` (verified `main` tracking `origin/main` containing accepted Session 06 commit `abd54ff999eb80058e0020e384bbb6781099d03a`)
+- **Branch**: `feat/dashboard-shell`
+
+### 1. Task & Prompt Summary
+
+Execute Session 07 (step-8 / D9) to implement the persistent authenticated dashboard application shell and demo session route guard for OrderHub Admin Console. The implementation scope covers:
+
+- Server-only demo session security module (`src/lib/auth/demo-session.ts`) utilizing HMAC-SHA256 signing with `DEMO_SESSION_SECRET` (minimum 32 characters) and constant-time signature verification.
+- Next.js 15 Middleware route guard (`src/middleware.ts`) performing coarse cookie-presence redirect on `/orders/:path*` without importing server crypto.
+- Server Actions for authentication (`src/features/auth/actions.ts`) with runtime `FormData` validation, demo session issuance, and fixed internal redirects.
+- Client login form integration (`src/features/auth/components/login-form.tsx`) using `useActionState` while preserving instant client validation, first-invalid-field focus, and pending submission states.
+- Persistent Server Component dashboard shell layout (`src/app/(dashboard)/layout.tsx`) with accessible keyboard skip link, persistent Topbar, and desktop Sidebar.
+- Desktop Sidebar (`src/components/layout/sidebar.tsx`) using fixed `w-sidebar` (256px) dimension token and active link `aria-current="page"`.
+- Persistent Topbar (`src/components/layout/topbar.tsx`) using fixed `h-topbar` (56px) dimension token, branding, user session indicator, and logout Server Action.
+- Mobile Navigation Drawer (`src/components/layout/mobile-nav.tsx`) using Radix Dialog `Modal` primitive with `ModalTrigger asChild`, focus containment, Escape dismissal, and return focus to the hamburger trigger.
+- Minimal server-rendered destination page (`src/app/(dashboard)/orders/page.tsx`).
+- Environment placeholder (`.env.example`) documenting >= 32-character requirement for `DEMO_SESSION_SECRET`.
+
+### 2. Architecture & Design Choices
+
+- **Preflight & Base Verification**:
+  - Ran `git status --short --branch`, `git log`, `git fetch origin`. Verified working tree is clean.
+  - Verified `origin/main` commit `40450285a854d68d1847e096417f54cff8c067e7` contains accepted Session 06 commit `abd54ff999eb80058e0020e384bbb6781099d03a` via `git merge-base --is-ancestor`.
+  - Created dedicated branch `feat/dashboard-shell` from verified `main`.
+- **Server/Client Boundary Separation**:
+  - _Server Components by default_: `src/app/(dashboard)/layout.tsx`, `src/app/(dashboard)/orders/page.tsx`, `src/components/layout/sidebar.tsx`, `src/components/layout/topbar.tsx`.
+  - _Client Boundaries_:
+    - `src/components/layout/mobile-nav.tsx`: Isolated to the mobile drawer widget to manage Radix Dialog open/close state and keyboard events.
+    - `src/features/auth/components/login-form.tsx`: Isolated to the interactive form element to manage controlled inputs, client validation focus, and `useActionState` submission lifecycle.
+- **Demo Session Cryptographic Security**:
+  - Implemented in `src/lib/auth/demo-session.ts` using Node built-in `crypto`.
+  - Token structure: `<base64url(payload)>.<base64url(hmac)>`.
+  - Secret enforcement: Fails closed if `DEMO_SESSION_SECRET` is missing or < 32 characters.
+  - Signature verification: Uses `crypto.timingSafeEqual` after strictly asserting identical buffer byte lengths.
+  - Expiration check: Validates explicit `expiresAt` timestamp against `Date.now()`.
+  - Cookie flags: `httpOnly: true`, `sameSite: "lax"`, `path: "/"`, `maxAge: 28800` (8 hours), and `secure: process.env.NODE_ENV === "production"`.
+  - Zero credential persistence: Passwords are never stored, logged, or placed in cookies/localStorage.
+- **Middleware & Layout Route Guard Split**:
+  - `src/middleware.ts` runs at the Next.js request stage and only inspects `request.cookies.has("orderhub_demo_session")` on `/orders/:path*`. If absent, redirects to `/login`. It never imports server-only crypto or secrets.
+  - `src/app/(dashboard)/layout.tsx` runs as a Server Component, extracts the cookie value via `await cookies()`, and executes full cryptographic validation. If invalid or expired, redirects to `/login`.
+- **4px Spacing Grid & Semantic Tokens**:
+  - Spacing strictly follows the 4px scale (`p-2`, `p-4`, `p-6`, `py-4`, `px-3`, `px-4`, `gap-2`, `gap-3`, `gap-4`, `space-y-1`, `space-y-6`).
+  - Dimensions use tokens: `w-sidebar` (256px), `h-topbar` (56px), `max-w-container-max` (1280px).
+  - Semantic typography: `text-page-title`, `text-section-title`, `text-body`, `text-body-medium`, `text-caption`.
+  - Semantic colors: `bg-background`, `bg-surface`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`, `bg-primary-muted`, `text-primary-muted-foreground`.
+  - Zero arbitrary bracket values (`[...]`) or inline styles.
+
+### 3. Corrections & Adjustments
+
+- In `src/middleware.ts`, initially imported `NextRequest` from `"next/request"`. TypeScript reported TS2307. Corrected import to `"next/server"`. Re-check: `tsc --noEmit` exited 0.
+- In `src/components/layout/mobile-nav.tsx`, wrapped trigger button in `<ModalTrigger asChild>` from Radix Dialog primitives. This ensures Radix Dialog internally registers the trigger element reference and cleanly restores focus to the hamburger button when the drawer is dismissed via `Escape` key (`document.activeElement.getAttribute("aria-label") === "Open navigation menu"`).
+
+### 4. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript strict mode, 0 errors).
+- `pnpm lint`: Exit code 0 (ESLint 9 evaluated all files with 0 errors and 0 warnings).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully; dynamic `/orders` and Middleware generated).
+- `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched files.
+- `git diff --check`: Exit code 0 (clean diff, zero whitespace/line-ending issues).
+- `pnpm format:check`: Exit code 1 (fails exclusively on 2 pre-existing out-of-scope D6 files `docs/delivery.md` and `docs/handoffs/session-03.md`).
+- Playwright Real-Browser Smoke Suite (`output/playwright/session-07/`):
+  - Viewports:
+    - 375x812: `clientWidth: 375`, `scrollWidth: 375`, overflow: false (`orders-375.png`).
+    - 768x1024: `clientWidth: 768`, `scrollWidth: 768`, overflow: false (`orders-768.png`).
+    - 1280x800: `clientWidth: 1280`, `scrollWidth: 1280`, sidebarWidth: 256px, topbarHeight: 56px, overflow: false (`orders-1280.png`).
+    - 1920x1080: `clientWidth: 1920`, `scrollWidth: 1920`, containerWidth: 1280px, overflow: false (`orders-1920.png`).
+  - Auth flow & Route guard:
+    - Unauthenticated access to `/orders` redirects to `/login`.
+    - Empty login form submission displays accessible error alerts and focuses `#login-email`.
+    - Valid-format synthetic demo credentials (`admin@orderhub.local` with valid-length password) issues signed demo cookie and navigates to `/orders`.
+    - Sign out button on Topbar executes `logoutAction`, clears cookie, and redirects to `/login`.
+    - Subsequent navigation to `/orders` redirects back to `/login`.
+  - Keyboard & Accessibility:
+    - Skip link targeting `#main-content` becomes visible upon Tab focus at (16, 16) with dimensions 178.6x40px (`skip-link-focused.png`).
+    - Active navigation link `/orders` exposes `aria-current="page"`.
+    - Mobile drawer opens on hamburger button click (`drawer-375-open.png`, `drawer-768-open.png`), traps focus, dismisses cleanly on `Escape`, and restores focus to the hamburger button (`isHamburgerFocused: true`).
+
+### 5. Remaining Limitations & Next Steps
+
+- Only `/orders` currently exists in the dashboard route group. Sibling-route persistence verification between `/orders` and `/preferences` is deferred to Session 08 (step-9).
+- Loading/error/not-found route states are scheduled for Session 08 (step-9).
+- Ready for Codex review.
+
+## Session 07 Repair r1 — Step-8 / D9: Artifact Formatting, Security Redaction, and Runtime Evidence
+
+- **Date**: 2026-11-09
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Verified Baseline HEAD**: `4045028bdd6d45950f9d595762571e449167a2a3` (verified `main` tracking `origin/main` containing accepted Session 06 commit `abd54ff999eb80058e0020e384bbb6781099d03a`)
+- **Branch**: `feat/dashboard-shell`
+
+### 1. Codex Review Analysis & Repair Scope (r1)
+
+Codex identified five concrete findings in `.agents/sessions/session-07/reviews/initial-review.md`:
+
+1. **Password Redaction**: Remove literal test password from persisted artifacts (`docs/handoffs/session-07.md`, `docs/ai-journal.md`, `output/playwright/session-07/results.json`). Replace with descriptions of valid-format synthetic demo credentials. Never persist credential values.
+2. **Baseline SHA Correction**: Supersede the mistyped baseline SHA from the initial report with verified `4045028bdd6d45950f9d595762571e449167a2a3`.
+3. **Format In-Scope Source Files**: Run Prettier on `src/app/(dashboard)/layout.tsx`, `src/app/(dashboard)/orders/page.tsx`, `src/components/layout/sidebar.tsx`, `src/components/layout/topbar.tsx`, and `src/features/auth/actions.ts`. Confirm all in-scope files pass targeted Prettier; accurately disclose that `pnpm format:check` fails only on the two known pre-existing out-of-scope D6 files (`docs/delivery.md` and `docs/handoffs/session-03.md`).
+4. **Complete Security and Keyboard Runtime Evidence**:
+   - Verify tampered/malformed cookie is passed by middleware but rejected by the dashboard Server Component layout with redirect to `/login`.
+   - Verify missing/weak secret (< 32 chars) fails closed without setting session cookies.
+   - Verify mobile drawer keyboard activation using `Enter` at 375px and `Space` at 768px, with focus containment, `Escape` dismissal, and return focus.
+   - Re-capture `orders-768.png` and `orders-1920.png` in clean default un-focused state.
+5. **Truthful Repair Report**: Create `docs/handoffs/session-07-r1.md` documenting all verification outcomes, checks, non-blocking build warnings, and evidence paths.
+
+### 2. Implementation Decisions & Runtime Verification
+
+- **Security Redaction Scope**: The redaction scope in r1 was strictly limited to the Session 07 credential value and local test result (in `docs/handoffs/session-07.md`, `output/playwright/session-07/results.json`, and the Session 07 section of `docs/ai-journal.md`). Earlier historical session entries (such as Session 04 Repair r1/r2 notes on credentials) were intentionally preserved intact to maintain historical integrity. All Session 07 references now describe valid-format synthetic demo credentials (`admin@orderhub.local` with valid-length password) without recording any password value.
+- **Targeted Formatting**: Formatted all 5 in-scope source files via `prettier --write`. Verified with `prettier --check`: 100% compliant. Confirmed `pnpm format:check` fails solely on the two pre-existing out-of-scope D6 files.
+- **Tampered Cookie Verification**: Set cookie `orderhub_demo_session=tamperedPayload.tamperedSignature`. Requested `/orders`. Middleware presence check allowed request through; dashboard Server Component layout rejected invalid HMAC signature via constant-time comparison and redirected to `/login`.
+- **Fail-Closed Verification**: Started server with weak secret (`< 32 chars`). Attempted login with valid credentials: Server Action failed closed, displayed accessible `Authentication Notice` error banner, and set 0 cookies (`hasSessionCookie: false`).
+- **Keyboard Drawer Activation**:
+  - 375x812: Focused hamburger button, pressed `Enter` key. Drawer opened with `Navigation Menu` title. Tab key trapped in dialog. Pressed `Escape`: dialog closed, focus restored to hamburger button (`isHamburgerFocused: true`).
+  - 768x1024: Focused hamburger button, pressed `Space` key. Drawer opened. Tab key trapped. Pressed `Escape`: dialog closed, focus restored to hamburger button (`isHamburgerFocused: true`).
+- **Default State Re-captures**: Re-captured `orders-768.png` and `orders-1920.png` in default un-focused state.
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript strict mode, 0 errors).
+- `pnpm lint`: Exit code 0 (ESLint 9 evaluated all files with 0 errors and 0 warnings).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled successfully; non-blocking Next.js ESLint plugin detection warning noted).
+- `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched files.
+- `pnpm format:check`: Exit code 1 (fails exclusively on 2 pre-existing out-of-scope D6 files `docs/delivery.md` and `docs/handoffs/session-03.md`).
+- `git diff --check`: Exit code 0.
+- Playwright Real-Browser Smoke Suite (`output/playwright/session-07/`):
+  - Viewports: 375x812, 768x1024, 1280x800, 1920x1080 -> `scrollWidth === clientWidth` (0 overflow).
+  - Security checks: tampered cookie rejection verified, weak secret fail-closed verified.
+  - Keyboard checks: Enter key activation at 375px verified, Space key activation at 768px verified, focus containment verified, Escape dismissal verified, focus restoration verified.
+
+### 4. Remaining Limitations & Next Steps
+
+- Concluded Session 07 Repair r1 (1/2). Proceeded to final Repair r2 based on Codex review feedback.
+
+## Session 07 Repair r2 — Step-8 / D9: Edge-Anchored Mobile Drawer, Clean Product UI, and Redaction Precision
+
+- **Date**: 2026-11-09
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Verified Baseline HEAD**: `4045028bdd6d45950f9d595762571e449167a2a3` (verified `main` tracking `origin/main` containing accepted Session 06 commit `abd54ff999eb80058e0020e384bbb6781099d03a`)
+- **Branch**: `feat/dashboard-shell`
+- **Round**: 2/2 (final repair round)
+
+### 1. Codex Review Analysis & Repair Scope (r2)
+
+Codex reviewed r1 in `.agents/sessions/session-07/reviews/r1-review.md` and requested three specific final fixes:
+
+1. **Render an actual mobile/tablet edge-anchored drawer**: `src/components/layout/mobile-nav.tsx` previously rendered `ModalContent` as a centered dialog. Transform it into an edge-anchored side drawer panel using existing dimension and spacing tokens (`w-sidebar: 256px`, full viewport height, anchored left). Preserve the backdrop overlay, accessible dialog semantics, focus containment, `Enter`/`Space` activation, `Escape` dismissal, and return focus to the hamburger trigger. Do not modify the shared UI primitive (`src/components/ui/modal.tsx`) and do not add new dependencies.
+2. **Remove implementation roadmap text from product UI**: `src/app/(dashboard)/orders/page.tsx` previously referenced future sessions, data island, MSW, search work, and shell verification. `src/components/layout/sidebar.tsx` labeled the footer "D9 Shell". Replace these with concise, product-facing B2B operations placeholder/status copy without session numbers or implementation details. Keep `/orders` minimal without inventing fake order data.
+3. **Clarify the redaction scope in the repair record**: State precisely that the redaction scope in Session 07 applies strictly to the Session 07 credential value and local test result (`docs/handoffs/session-07.md`, `docs/handoffs/session-07-r1.md`, `output/playwright/session-07/results.json`, and the Session 07 sections of `docs/ai-journal.md`). Historical entries from earlier sessions (such as Session 04 Repair r1/r2 credential removal notes) were intentionally left intact. Never repeat or persist any password value.
+4. **Final reporting and evidence**: Create `docs/handoffs/session-07-r2.md`, re-capture all four default viewport screenshots plus both mobile/tablet drawer states, re-run all checks, and report exact results truthfully.
+
+### 2. Implementation Decisions & Runtime Verification
+
+- **Edge-Anchored Drawer Panel**:
+  - In `src/components/layout/mobile-nav.tsx`, passed `className="fixed inset-y-0 left-0 top-0 bottom-0 h-full w-sidebar max-w-[calc(100vw-3rem)] rounded-none border-y-0 border-l-0 border-r border-border bg-surface shadow-lg"` to `ModalContent`.
+  - Because `ModalContent` passes `className` directly into Radix's `DialogPrimitive.Content`, applying `fixed inset-y-0 left-0` breaks out of the centered flex wrapper cleanly without modifying `src/components/ui/modal.tsx`.
+  - Measured live bounding rectangle via Playwright MCP:
+    - At 375x812: `left: 0, top: 0, right: 256, bottom: 812, width: 256, height: 812`. Backdrop overlay visible across remaining 119px.
+    - At 768x1024: `left: 0, top: 0, right: 256, bottom: 1024, width: 256, height: 1024`. Backdrop overlay visible across remaining 512px.
+  - Keyboard interactions verified:
+    - 375px: Hamburger trigger focused -> pressed `Enter` -> drawer opened -> Tab cycles trapped inside -> pressed `Escape` -> drawer dismissed -> focus returned to hamburger trigger (`document.activeElement.getAttribute("aria-label") === "Open navigation menu"`).
+    - 768px: Hamburger trigger focused -> pressed `Space` -> drawer opened -> Tab cycles trapped inside -> pressed `Escape` -> drawer dismissed -> focus returned to hamburger trigger.
+- **Product-Facing UI Copy**:
+  - In `src/app/(dashboard)/orders/page.tsx`: Card title set to "Orders Overview"; card description set to "Monitor order processing, view incoming shipments, and manage fulfillment status across partner distribution channels."; card body set to "No active order filters applied. Real-time fulfillment data and search tools will populate here." Removed all mentions of sessions, roadmap, MSW, data island, and verification status.
+  - In `src/components/layout/sidebar.tsx`: Footer status badge updated from "OrderHub Console • D9 Shell" to "OrderHub Console • Online".
+- **Redaction Scope Precision**:
+  - Explicitly clarified across `docs/handoffs/session-07-r2.md` and `docs/ai-journal.md` that the redaction scope strictly targets the Session 07 credential value and local test result. Historical entries from Session 04 Repair r1/r2 describing the removal of hardcoded credentials in earlier commits were intentionally preserved to maintain an accurate audit log. Zero password values are recorded.
+- **Evidence Recaptures**:
+  - Recaptured `orders-375.png`, `drawer-375-open.png`, `orders-768.png`, `drawer-768-open.png`, `orders-1280.png`, `skip-link-focused.png`, `orders-1920.png`.
+  - Updated `output/playwright/session-07/results.json` with exact drawer geometry bounding box measurements and zero password values.
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript strict mode, 0 errors).
+- `pnpm lint`: Exit code 0 (ESLint 9 evaluated all files with 0 errors and 0 warnings).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled successfully; dynamic `/orders` and Middleware generated; non-blocking Next.js ESLint plugin detection warning noted).
+- `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched source and documentation files.
+- `pnpm format:check`: Exit code 1 (fails exclusively on 2 pre-existing out-of-scope D6 files `docs/delivery.md` and `docs/handoffs/session-03.md`).
+- `git diff --check`: Exit code 0 (clean diff, zero whitespace/line-ending issues).
+- Playwright Real-Browser Smoke Suite (`output/playwright/session-07/`):
+  - Viewports: 375x812, 768x1024, 1280x800, 1920x1080 -> `scrollWidth === clientWidth` (0 overflow).
+  - Drawer geometry: left-edge anchored at `x: 0`, width 256px (`w-sidebar`), full height, backdrop overlay present.
+  - Keyboard checks: Enter key activation at 375px, Space key activation at 768px, focus containment, Escape dismissal, and return focus to hamburger trigger verified.
+  - Security checks: tampered cookie rejected by dashboard layout HMAC verification, weak/missing secret fails closed.
+
+### 4. Remaining Limitations & Next Steps
+
+- This concludes Session 07 Repair r2 (final round 2/2).
+- Per repair guidelines, this is the final repair round. All changes remain unstaged and uncommitted for Codex review.
