@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { useActionState, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -9,49 +9,54 @@ import {
   type LoginFormValues,
   type LoginFormErrors,
 } from "../validation";
+import { loginAction, type LoginActionResult } from "../actions";
 
 export function LoginForm() {
+  const [state, formAction, isPending] = useActionState<
+    LoginActionResult,
+    FormData
+  >(loginAction, {});
+
   const [values, setValues] = useState<LoginFormValues>({
     email: "",
     password: "",
   });
-  const [errors, setErrors] = useState<LoginFormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [demoNotice, setDemoNotice] = useState<{
-    submittedEmail: string;
-    timestamp: string;
-  } | null>(null);
+  const [clientErrors, setClientErrors] = useState<LoginFormErrors>({});
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
+  // Combined errors: client validation overrides or server action feedback
+  const errors: LoginFormErrors = {
+    ...state?.errors,
+    ...clientErrors,
+  };
+
   const handleEmailChange = (nextEmail: string) => {
     setValues((prev) => ({ ...prev, email: nextEmail }));
-    if (errors.email) {
-      setErrors((prev) => ({ ...prev, email: undefined }));
+    if (clientErrors.email || state?.errors?.email) {
+      setClientErrors((prev) => ({ ...prev, email: undefined }));
     }
   };
 
   const handlePasswordChange = (nextPassword: string) => {
     setValues((prev) => ({ ...prev, password: nextPassword }));
-    if (errors.password) {
-      setErrors((prev) => ({ ...prev, password: undefined }));
+    if (clientErrors.password || state?.errors?.password) {
+      setClientErrors((prev) => ({ ...prev, password: undefined }));
     }
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (isSubmitting) {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (isPending) {
+      e.preventDefault();
       return;
     }
-
-    setDemoNotice(null);
 
     const validation = validateLoginForm(values);
 
     if (!validation.isValid) {
-      setErrors(validation.errors);
+      e.preventDefault();
+      setClientErrors(validation.errors);
 
       // Focus the first invalid field per accessibility requirements
       if (validation.errors.email) {
@@ -62,52 +67,34 @@ export function LoginForm() {
       return;
     }
 
-    setErrors({});
-    setIsSubmitting(true);
-
-    try {
-      // Simulate realistic submission latency without persisting credentials
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      // Display demo response confirming successful validation
-      // Password is immediately cleared from memory; never logged, persisted, or transmitted
-      const validatedEmail = values.email.trim();
-      setValues({ email: validatedEmail, password: "" });
-      setDemoNotice({
-        submittedEmail: validatedEmail,
-        timestamp: new Date().toLocaleTimeString(),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    setClientErrors({});
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-6">
-      {/* Demo status alert banner */}
-      {demoNotice && (
+    <form
+      action={formAction}
+      onSubmit={handleSubmit}
+      noValidate
+      className="space-y-6"
+    >
+      {/* Server error alert banner if authentication service fails closed */}
+      {state?.serverError && (
         <div
-          role="status"
+          role="alert"
           aria-live="polite"
-          className="rounded-md border border-primary-muted bg-primary-muted/30 p-4"
+          className="rounded-md border border-destructive/30 bg-destructive-muted p-4"
         >
           <div className="flex items-start gap-3">
             <span
-              className="mt-1 inline-block h-2 w-2 rounded-full bg-primary"
+              className="mt-1 inline-block h-2 w-2 rounded-full bg-destructive"
               aria-hidden="true"
             />
             <div className="space-y-1">
-              <p className="text-body-medium font-semibold text-primary">
-                Demo Mode Notice
+              <p className="text-body-medium font-semibold text-destructive">
+                Authentication Notice
               </p>
-              <p className="text-body text-muted-foreground">
-                Client validation passed successfully. Authentication service is
-                currently not connected (scheduled for Session 07 / D9).
-                Credentials were not sent, stored, or logged.
-              </p>
-              <p className="text-caption font-mono text-muted-foreground">
-                Validated account: {demoNotice.submittedEmail} at{" "}
-                {demoNotice.timestamp}
+              <p className="text-caption text-destructive-muted-foreground">
+                {state.serverError}
               </p>
             </div>
           </div>
@@ -130,7 +117,7 @@ export function LoginForm() {
           autoComplete="email"
           value={values.email}
           onChange={(e) => handleEmailChange(e.target.value)}
-          disabled={isSubmitting}
+          disabled={isPending}
           aria-invalid={errors.email ? "true" : "false"}
           aria-describedby={errors.email ? "login-email-error" : undefined}
           placeholder="name@company.com"
@@ -162,7 +149,7 @@ export function LoginForm() {
           autoComplete="current-password"
           value={values.password}
           onChange={(e) => handlePasswordChange(e.target.value)}
-          disabled={isSubmitting}
+          disabled={isPending}
           aria-invalid={errors.password ? "true" : "false"}
           aria-describedby={
             errors.password ? "login-password-error" : undefined
@@ -186,22 +173,22 @@ export function LoginForm() {
           type="submit"
           variant="primary"
           size="lg"
-          disabled={isSubmitting}
-          loading={isSubmitting}
+          disabled={isPending}
+          loading={isPending}
           className="w-full"
         >
-          {isSubmitting ? "Signing in..." : "Sign in to Console"}
+          {isPending ? "Signing in..." : "Sign in to Console"}
         </Button>
       </div>
 
       {/* Demo guidance reference block with base Card primitive */}
       <Card variant="muted" size="sm" className="text-center">
         <p className="text-caption font-medium text-foreground">
-          Demo Mode Preview
+          Demo Mode Session
         </p>
         <p className="mt-1 text-caption text-muted-foreground">
-          Client validation only. Enter any valid email and 8+ character
-          password.
+          Enter any valid email and 8+ character password to establish a signed
+          demo session.
         </p>
       </Card>
     </form>
