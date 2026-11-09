@@ -1,6 +1,6 @@
 # OrderHub Admin Console — Delivery & Deployment
 
-This document records the actual GitHub and Vercel delivery state for the capstone, plus the checks still needed before a preview can be accepted. Deployment facts below are dated **2026-11-06**; update this record when a newer preview is reviewed.
+This document records the actual GitHub and Vercel delivery state for the capstone. Last reviewed **2026-11-09**.
 
 ## 1. Repository and Branching
 
@@ -8,7 +8,7 @@ This document records the actual GitHub and Vercel delivery state for the capsto
 | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | GitHub repository                          | [datnguyen154/vatek-orderhub-admin](https://github.com/datnguyen154/vatek-orderhub-admin) |
 | Production branch                          | `main`                                                                                    |
-| Local `main` / `origin/main` at last check | `6ba3307f02d5d999a39fda7c0e666052aaefa3e7` — PR #2 merge                                  |
+| Local `main` / cached `origin/main` at last check | `6ba3307f02d5d999a39fda7c0e666052aaefa3e7` — PR #2 merge                             |
 | Production URL                             | [https://vatek-orderhub-admin.vercel.app/](https://vatek-orderhub-admin.vercel.app/)      |
 | Hosting                                    | Vercel                                                                                    |
 
@@ -29,12 +29,13 @@ The D7 feature commit is `2b7f8d9f569454b19f4b5af82997d0a6f4369a69`; it is an an
 | ----------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Production  | [vatek-orderhub-admin.vercel.app](https://vatek-orderhub-admin.vercel.app/)                          | `55d627914b778d75b2c7d0992f7e6d6eefb49c91` (`main` at the time, SHA reported by the user)                         | Live page opened in a browser on 2026-11-06. It renders the OrderHub Admin Console and the D6 design-token baseline. The source SHA is user-reported; Vercel deployment metadata was not independently available.                            |
 | D7 preview  | [Login preview](https://vatek-orderhub-admin-git-feat-login-screen-dat-s-projects9.vercel.app/login) | `2b7f8d9f569454b19f4b5af82997d0a6f4369a69` on `feat/login-screen` (SHA and successful build reported by the user) | The preview URL was opened on 2026-11-06, but Vercel redirected the unauthenticated browser to its sign-in/SSO page. The deployed login page could not be visually or interactively reviewed, so preview smoke verification remains pending. |
+| D8 / Session 05 preview | [Login preview](https://vatek-orderhub-admin-git-feat-base-components-dat-s-projects9.vercel.app/login) | `12a70e2f9909f5205a9a31026c4aac8048d56aae` on `feat/base-components` (local HEAD and cached upstream tracking ref match; deployment SHA/Ready reported by user) | Opened on 2026-11-09; Login rendered. No horizontal overflow at 375/768/1280/1920px. Keyboard order email → password → submit and reverse Shift+Tab worked; password showed a visible 2px focus outline/ring. At 375px the browser client/scroll widths were both 360px (viewport 375px, scrollbar accounts for the difference); at the other widths client and scroll widths matched. This is a Login regression smoke only: the route does not yet consume the new primitives, so their runtime behavior remains for Session 06. Vercel deployment metadata was not independently available. |
 
-The live production page currently corresponds to the D6 baseline, while `main` has advanced through D7. The D7 preview build was reported successful, but its app route remains protected from the available review session. Do not describe the D7 preview as smoke-tested until the page itself is accessible and reviewed.
+The live production page currently corresponds to the D6 baseline, while cached `origin/main` is at the D7 merge. The D7 preview remains historically blocked by Vercel SSO. The Session 05 preview is accessible and has the limited Login smoke recorded above. `git fetch origin` failed during this review (`getaddrinfo() thread failed to start`), so cached remote refs could not be refreshed; the Session 05 branch ref already matched the reported commit SHA.
 
-### Required update after the next real preview review
+### Preview review protocol
 
-When an actual Vercel preview is accessible, update this section with its exact URL, branch, full deployment SHA, review date, and outcome. Open the deployed app route and record responsive results at **375px, 768px, 1280px, and 1920px**, plus keyboard/focus checks for affected controls. If Vercel protection blocks access, record the redirect and leave the UI smoke check pending. Repeat this update for each materially new preview rather than reusing an earlier deployment's evidence.
+For each materially new preview, record its URL, branch, full source SHA, review date, and outcome. Open the deployed route and record responsive results at **375px, 768px, 1280px, and 1920px**, plus keyboard/focus checks for affected controls. If Vercel protection blocks access, record the redirect and leave the UI smoke check pending. A browser smoke result applies only to the route and components actually rendered; it does not validate unrendered primitives or prove complete accessibility.
 
 ## 4. Local Verification Record
 
