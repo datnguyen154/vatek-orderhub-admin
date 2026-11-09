@@ -2,6 +2,7 @@ import { logoutAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MobileNav } from "./mobile-nav";
+import { CurrentRouteLabel } from "./current-route-label";
 
 interface TopbarProps {
   userEmail: string;
@@ -14,6 +15,7 @@ interface TopbarProps {
  * - Persistent top navigation bar using the `h-topbar` dimension token.
  * - Integrates `MobileNav` drawer trigger for viewports below `lg`.
  * - Includes branding, breadcrumbs, user session status, and accessible logout Server Action.
+ * - Uses `CurrentRouteLabel` as a minimal client leaf to dynamically reflect active route.
  */
 export function Topbar({ userEmail }: TopbarProps) {
   return (
@@ -34,11 +36,11 @@ export function Topbar({ userEmail }: TopbarProps) {
           </span>
         </div>
 
-        {/* Section separator and route indicator */}
+        {/* Section separator and dynamic route indicator */}
         <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-border text-caption text-muted-foreground">
           <span>Console</span>
           <span aria-hidden="true">/</span>
-          <span className="font-medium text-foreground">Orders</span>
+          <CurrentRouteLabel />
         </div>
       </div>
 
