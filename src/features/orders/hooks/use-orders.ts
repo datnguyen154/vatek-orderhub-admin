@@ -1,19 +1,30 @@
 /**
  * OrderHub Admin Console — useOrders Hook
  *
- * Encapsulates the async fetch lifecycle for orders data:
- * - Awaits mock provider readiness before dispatching initial fetch
- * - Handles loading, empty, error, and success states
- * - Cancels in-flight requests on unmount or retry using AbortController
- * - Prevents stale responses from overwriting newer state via request sequencing
+ * TanStack Query backed hook for Orders data management:
+ * - Stable query keys containing current page and active filters
+ * - Avoids showing old-page rows as if they belonged to the newly selected page
+ * - Connects to MockProvider readiness boundary before fetching
+ * - 60s staleTime for administrative caching efficiency
+ * - Exposes loading, background fetching, error, empty, and success states
  */
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getOrders } from "../api";
-import type { Order } from "../types";
+import type { Order, OrdersResponse } from "../types";
 import { useMock } from "@/components/providers/mock-provider";
+
+export interface UseOrdersOptions {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  scenario?: string;
+}
 
 export type OrdersFetchStatus =
   | "idle"
@@ -30,142 +41,134 @@ export interface OrdersState {
 }
 
 export interface UseOrdersResult {
-  state: OrdersState;
+  data: OrdersResponse | undefined;
+  orders: Order[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  isLoading: boolean;
+  isFetching: boolean;
+  isError: boolean;
+  errorMessage: string | null;
   refetch: () => void;
   isReady: boolean;
   mockError: string | null;
+  isPlaceholderData: boolean;
+  state: OrdersState;
 }
 
-export function useOrders(scenarioOverride?: string): UseOrdersResult {
+export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
   const { isReady, error: mockError } = useMock();
-  const [state, setState] = useState<OrdersState>({
-    status: "idle",
-    data: [],
-    total: 0,
-    errorMessage: null,
+
+  const page = options.page && options.page > 0 ? options.page : 1;
+  const pageSize =
+    options.pageSize && options.pageSize > 0 ? options.pageSize : 5;
+  const status = options.status || undefined;
+  const search = options.search?.trim() || undefined;
+  const startDate = options.startDate?.trim() || undefined;
+  const endDate = options.endDate?.trim() || undefined;
+  const scenario = options.scenario || undefined;
+
+  // Stable query key incorporating every active filter and page
+  const queryKey = [
+    "orders",
+    {
+      page,
+      pageSize,
+      status: status ?? null,
+      search: search ?? null,
+      startDate: startDate ?? null,
+      endDate: endDate ?? null,
+      scenario: scenario ?? null,
+    },
+  ] as const;
+
+  const query = useQuery({
+    queryKey,
+    queryFn: ({ signal }) =>
+      getOrders({
+        signal,
+        page,
+        pageSize,
+        status,
+        search,
+        startDate,
+        endDate,
+        scenario,
+      }),
+    enabled: isReady && !mockError,
+    staleTime: 60 * 1000, // 60 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData, previousQuery) => {
+      // Re-use previous data only when refetching the exact same page & filters.
+      // Avoid showing previous-page data when the page or filter changes,
+      // preventing misleading page state.
+      if (!previousData || !previousQuery) return undefined;
+      const prevKey = previousQuery.queryKey;
+      const isSameKey =
+        Array.isArray(prevKey) &&
+        prevKey[0] === "orders" &&
+        JSON.stringify(prevKey[1]) === JSON.stringify(queryKey[1]);
+      return isSameKey ? previousData : undefined;
+    },
   });
 
-  // Track request sequence to prevent stale responses from replacing newer state
-  const requestIdRef = useRef(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const orders = query.data?.data ?? [];
+  const total = query.data?.total ?? 0;
+  const totalPages =
+    query.data?.totalPages ?? (total > 0 ? Math.ceil(total / pageSize) : 0);
 
-  const fetchOrders = useCallback(async () => {
-    // If mock service failed to initialize, set error immediately
-    if (mockError) {
-      setState({
-        status: "error",
-        data: [],
-        total: 0,
-        errorMessage: `Mock service worker failed to start: ${mockError}`,
-      });
-      return;
+  let errorMessage: string | null = null;
+  if (mockError) {
+    errorMessage = `Mock service worker failed to start: ${mockError}`;
+  } else if (query.error) {
+    const err = query.error;
+    if (err.name === "HttpError") {
+      errorMessage = `Server returned error (${err.message}).`;
+    } else if (err.name === "NetworkError") {
+      errorMessage =
+        "Network connection failed. Please verify your connection.";
+    } else if (err.name === "InvalidPayloadError") {
+      errorMessage = "Received invalid data structure from API.";
+    } else {
+      errorMessage = err.message || "Unable to load orders. Please try again.";
     }
+  }
 
-    // Cancel any previous in-flight request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  let statusState: OrdersFetchStatus = "idle";
+  if (mockError || query.isError) {
+    statusState = "error";
+  } else if (!isReady || query.isLoading) {
+    statusState = "loading";
+  } else if (query.data) {
+    statusState = orders.length === 0 ? "empty" : "success";
+  }
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    const currentRequestId = ++requestIdRef.current;
-    setState((prev) => ({
-      ...prev,
-      status: "loading",
-      errorMessage: null,
-    }));
-
-    // Resolve scenario from override or window URL parameter
-    let resolvedScenario = scenarioOverride;
-    if (!resolvedScenario && typeof window !== "undefined") {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        resolvedScenario = params.get("scenario") || undefined;
-      } catch {
-        resolvedScenario = undefined;
-      }
-    }
-
-    try {
-      const response = await getOrders({
-        signal: controller.signal,
-        scenario: resolvedScenario,
-      });
-
-      // Ignore if a newer request was dispatched while this was pending
-      if (currentRequestId !== requestIdRef.current) {
-        return;
-      }
-
-      if (response.data.length === 0) {
-        setState({
-          status: "empty",
-          data: [],
-          total: 0,
-          errorMessage: null,
-        });
-      } else {
-        setState({
-          status: "success",
-          data: response.data,
-          total: response.total,
-          errorMessage: null,
-        });
-      }
-    } catch (err) {
-      // Ignore if a newer request was dispatched or if request was aborted
-      if (currentRequestId !== requestIdRef.current) {
-        return;
-      }
-
-      if (
-        (err instanceof DOMException && err.name === "AbortError") ||
-        (err instanceof Error && err.name === "AbortError")
-      ) {
-        return;
-      }
-
-      let message = "Unable to load orders. Please try again.";
-      if (err instanceof Error) {
-        if (err.name === "HttpError") {
-          message = `Server returned error (${err.message}).`;
-        } else if (err.name === "NetworkError") {
-          message = "Network connection failed. Please verify your connection.";
-        } else if (err.name === "InvalidPayloadError") {
-          message = "Received invalid data structure from API.";
-        }
-      }
-
-      setState({
-        status: "error",
-        data: [],
-        total: 0,
-        errorMessage: message,
-      });
-    }
-  }, [mockError, scenarioOverride]);
-
-  useEffect(() => {
-    // Wait until mock provider is initialized before making requests
-    if (!isReady) {
-      return;
-    }
-
-    fetchOrders();
-
-    return () => {
-      // Abort in-flight requests on unmount
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [isReady, fetchOrders]);
+  const state: OrdersState = {
+    status: statusState,
+    data: orders,
+    total,
+    errorMessage,
+  };
 
   return {
-    state,
-    refetch: fetchOrders,
+    data: query.data,
+    orders,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    isLoading: !isReady || query.isLoading,
+    isFetching: query.isFetching,
+    isError: Boolean(mockError) || query.isError,
+    errorMessage,
+    refetch: () => {
+      void query.refetch();
+    },
     isReady,
     mockError,
+    isPlaceholderData: query.isPlaceholderData,
+    state,
   };
 }

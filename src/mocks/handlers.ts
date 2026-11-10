@@ -1,17 +1,18 @@
 /**
  * OrderHub Admin Console — MSW Request Handlers
  *
- * Intercepts GET /api/orders in the browser worker and provides reproducible scenarios:
- * - "success": returns full deterministic fixtures list
- * - "empty": returns empty list ({ data: [], total: 0 })
- * - "error": returns HTTP 500 error response
- * - "delay": simulates 1500ms network latency before returning fixtures
+ * Intercepts GET /api/orders in the browser worker and provides:
+ * - Pagination: page, pageSize (default 5, exposing 2 pages across 10 deterministic fixtures)
+ * - Filtering: status, order-code search, deterministic date-range boundaries (UTC 00:00:00 to 23:59:59.999)
+ * - Reproducible scenarios: "success", "delay" (1500ms), "empty", "error" (500), "disabled" (passthrough)
  */
 
 import { http, HttpResponse, delay, passthrough } from "msw";
 import { mockOrders } from "./data/orders";
 
 export type MockScenario = "success" | "delay" | "empty" | "error" | "disabled";
+
+export const DEFAULT_PAGE_SIZE = 5;
 
 export const handlers = [
   http.get("/api/orders", async ({ request }) => {
@@ -39,48 +40,103 @@ export const handlers = [
       }
     }
 
-    switch (scenario) {
-      case "disabled":
-      case "mock_disabled":
-        // Bypass mock interception and perform real network fetch to test mock-disabled behavior
-        return passthrough();
-
-      case "empty":
-        return HttpResponse.json(
-          {
-            data: [],
-            total: 0,
-          },
-          { status: 200 }
-        );
-
-      case "error":
-        return HttpResponse.json(
-          {
-            message: "Simulated upstream database connection failure",
-          },
-          { status: 500 }
-        );
-
-      case "delay":
-        await delay(1500);
-        return HttpResponse.json(
-          {
-            data: mockOrders,
-            total: mockOrders.length,
-          },
-          { status: 200 }
-        );
-
-      case "success":
-      default:
-        return HttpResponse.json(
-          {
-            data: mockOrders,
-            total: mockOrders.length,
-          },
-          { status: 200 }
-        );
+    if (scenario === "disabled" || scenario === "mock_disabled") {
+      // Bypass mock interception and perform real network fetch to test mock-disabled behavior
+      return passthrough();
     }
+
+    if (scenario === "error") {
+      return HttpResponse.json(
+        {
+          message: "Simulated upstream database connection failure",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (scenario === "empty") {
+      return HttpResponse.json(
+        {
+          data: [],
+          total: 0,
+          page: 1,
+          pageSize: DEFAULT_PAGE_SIZE,
+          totalPages: 0,
+        },
+        { status: 200 }
+      );
+    }
+
+    if (scenario === "delay") {
+      await delay(1500);
+    }
+
+    // Parse pagination and filter parameters
+    const pageParam = url.searchParams.get("page");
+    const pageSizeParam = url.searchParams.get("pageSize");
+    const statusParam = url.searchParams.get("status")?.trim().toLowerCase();
+    const searchParam = url.searchParams.get("search")?.trim().toLowerCase();
+    const startDateParam = url.searchParams.get("startDate")?.trim();
+    const endDateParam = url.searchParams.get("endDate")?.trim();
+
+    const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
+    const pageSize = Math.max(
+      1,
+      parseInt(pageSizeParam || String(DEFAULT_PAGE_SIZE), 10) ||
+        DEFAULT_PAGE_SIZE
+    );
+
+    let filtered = [...mockOrders];
+
+    // 1. Status filter (if provided and not "all" or empty)
+    if (statusParam && statusParam !== "all" && statusParam !== "") {
+      filtered = filtered.filter(
+        (order) => order.status.toLowerCase() === statusParam
+      );
+    }
+
+    // 2. Order code search (case-insensitive substring match)
+    if (searchParam) {
+      filtered = filtered.filter((order) =>
+        order.orderCode.toLowerCase().includes(searchParam)
+      );
+    }
+
+    // 3. Date range filter (deterministic UTC day boundaries)
+    if (startDateParam) {
+      const startMs = new Date(`${startDateParam}T00:00:00.000Z`).getTime();
+      if (!Number.isNaN(startMs)) {
+        filtered = filtered.filter((order) => {
+          const orderMs = new Date(order.createdAt).getTime();
+          return orderMs >= startMs;
+        });
+      }
+    }
+
+    if (endDateParam) {
+      const endMs = new Date(`${endDateParam}T23:59:59.999Z`).getTime();
+      if (!Number.isNaN(endMs)) {
+        filtered = filtered.filter((order) => {
+          const orderMs = new Date(order.createdAt).getTime();
+          return orderMs <= endMs;
+        });
+      }
+    }
+
+    const total = filtered.length;
+    const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
+    const startIndex = (page - 1) * pageSize;
+    const paginatedData = filtered.slice(startIndex, startIndex + pageSize);
+
+    return HttpResponse.json(
+      {
+        data: paginatedData,
+        total,
+        page,
+        pageSize,
+        totalPages,
+      },
+      { status: 200 }
+    );
   }),
 ];

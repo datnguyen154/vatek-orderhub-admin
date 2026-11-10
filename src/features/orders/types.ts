@@ -34,6 +34,18 @@ export interface Order {
 export interface OrdersResponse {
   data: Order[];
   total: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
+}
+
+export interface OrdersFilterParams {
+  page?: number;
+  pageSize?: number;
+  status?: OrderStatus | "";
+  search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 /**
@@ -92,6 +104,33 @@ export function isOrdersResponse(value: unknown): value is OrdersResponse {
     !Array.isArray(record.data) ||
     typeof record.total !== "number" ||
     Number.isNaN(record.total)
+  ) {
+    return false;
+  }
+
+  if (
+    record.page !== undefined &&
+    (typeof record.page !== "number" ||
+      Number.isNaN(record.page) ||
+      record.page < 1)
+  ) {
+    return false;
+  }
+
+  if (
+    record.pageSize !== undefined &&
+    (typeof record.pageSize !== "number" ||
+      Number.isNaN(record.pageSize) ||
+      record.pageSize < 1)
+  ) {
+    return false;
+  }
+
+  if (
+    record.totalPages !== undefined &&
+    (typeof record.totalPages !== "number" ||
+      Number.isNaN(record.totalPages) ||
+      record.totalPages < 0)
   ) {
     return false;
   }
