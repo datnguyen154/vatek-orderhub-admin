@@ -1368,3 +1368,133 @@ Resolve Vercel CI deployment failure on the Session 09 PR:
 - **Documentation correction**: Replaced README's recommendation to approve all package build scripts or disable scripts globally with guidance matching the explicit `msw@2.7.3` allowlist in `pnpm-workspace.yaml`.
 - **Checks**: `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm build` passed. `pnpm format:check` exited 1 on the existing baseline files `docs/delivery.md`, `docs/handoffs/session-03.md`, and `pnpm-workspace.yaml`. `git diff --check` passed after edits.
 - **Security / limits**: Used a throwaway invalid-domain demo email and non-secret test password; neither is retained in reports. No environment secret value was printed, copied into evidence, or stored in screenshots. No application source, dependencies, or Git history were changed. At the user's request, Codex updates step-12 to `awaiting_user_commit`; it must remain short of `done` until the user's commit is verified. Mentor approval is not recorded.
+
+## Session 11 — Step-13 / D11: Orders query cache, pagination, filters và URL state
+
+- **Date**: 2026-11-10
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Verified Baseline HEAD**: `47eec810c0d0c04e087f39813a498e1b28c0736b` (`main` tracking `origin/main` at Session 10 handoff)
+- **Branch**: `feat/orders-query-cache`
+
+### 1. Task & Prompt Summary
+
+Execute Session 11 (step-13 / D11) strictly within `step-13.scope_files` allowlist:
+
+1. Verify preflight clean worktree, branch `main`, and expected baseline SHA `47eec810c0d0c04e087f39813a498e1b28c0736b`. Create dedicated feature branch `feat/orders-query-cache`.
+2. Install pinned `@tanstack/react-query@5.66.0` compatible with Next.js 15 App Router and React 19. Integrate client `QueryClientProvider` into provider tree inside `MockProvider`.
+3. Extend typed Orders API and MSW request handler to accept pagination (`page`, `pageSize`), status filter, debounced order-code search, and deterministic date range (`startDate`, `endDate` with UTC boundaries).
+4. Preserve distinction between absent filter parameters and present empty values for forward-compatible Session 12 preference fallback.
+5. Implement URL state synchronization using `useSearchParams`, `router.replace` (for filters/search to prevent history pollution), and `router.push` (for pagination).
+6. Implement custom `placeholderData` preventing misleading page state when page or filters change.
+7. Verify all four viewports (375, 768, 1280, 1920px), pagination, filters, debounced search, reload restoration, and mock scenarios via Playwright MCP.
+
+### 2. AI Prompt Approach & Architectural Choices
+
+- **CodeGraph MCP Exploration**:
+  - Ran `codegraph_explore` on `D:/vatek-labs/orderhub-admin-console` before inspecting source code or making edits.
+  - Identified blast radius: `OrdersList` caller in `src/app/(dashboard)/orders/page.tsx` (preserved as pure Server Component), `OrdersTable` caller in `OrdersList`, and `getOrders` caller in `useOrders`.
+- **Query Cache Configuration**:
+  - `staleTime: 60 * 1000` (60 seconds): balances data freshness with avoiding redundant refetches during routine navigation between orders, shell tabs, and preferences.
+  - `gcTime: 5 * 60 * 1000` (5 minutes): keeps inactive cached pages in memory for instant back/forward navigation.
+  - Stable query key incorporating all active parameters: `["orders", { page, pageSize, status, search, startDate, endDate, scenario }]`.
+  - Misleading state prevention: `placeholderData` returns `undefined` when the query key changes, causing the loading skeleton to display rather than showing stale rows from the old page under the new page number. When refetching the exact same query key, previous data is retained while `isFetching` indicates background activity.
+- **Deterministic Date Boundaries**:
+  - `startDate=YYYY-MM-DD` expands to UTC `00:00:00.000Z` start-of-day.
+  - `endDate=YYYY-MM-DD` expands to UTC `23:59:59.999Z` end-of-day.
+- **Next.js 15 App Router Deopt Protection**:
+  - Wrapped `OrdersListContent` in `<Suspense fallback={<OrdersLoadingSkeleton />}>` within `OrdersList` to guarantee `useSearchParams()` never causes Next.js build deopt.
+
+### 3. What AI Got Wrong & What Was Corrected
+
+1. **Date input rapid-fill race condition**:
+   - _Mistake_: In automated testing, filling `startDate` and immediately `endDate` triggered `handleFilterChange` twice before the Next.js router transition updated `searchParams`. The second update read the un-updated `searchParams`, wiping out `startDate`.
+   - _Correction_: Maintained immediate local state in `OrdersFilters` (`localStartDate`, `localEndDate`) so rapid updates pass both inputs atomically to `onFilterChange`.
+2. **Ambiguous `role="status"` selector in Playwright**:
+   - _Mistake_: In initial Playwright check, waiting on `[role="status"]` prematurely matched the loading skeleton (which also has `role="status"`), causing an element-lookup failure for the empty card's `h3`.
+   - _Correction_: Explicitly targeted `[role="status"]:has(h3)` and `h3:has-text('No orders found')`.
+3. **Prettier code style divergence**:
+   - _Mistake_: Authored files had minor whitespace variations before running Prettier.
+   - _Correction_: Executed `pnpm exec prettier --write` on touched files, verifying clean exit 0 across all in-scope files.
+
+### 4. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (strict mode, zero errors).
+- `pnpm lint`: Exit code 0 (1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully in 8.4s; dynamic `/orders` at 10.4 kB / 125 kB).
+- `pnpm format:check`: Exit code 1 (3 pre-existing baseline files: `docs/delivery.md`, `docs/handoffs/session-03.md`, `pnpm-workspace.yaml`).
+- `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched files.
+- `git diff --check`: Exit code 0 (clean diff, zero whitespace anomalies).
+- **Playwright MCP Evidence (`output/playwright/session-11/`)**:
+  - 13 screenshots covering 4 viewports, pagination, filters, loading, empty, and error states.
+
+### 5. Remaining Limitations & Next Steps
+
+- All implementation and verification files remain uncommitted and unstaged for Codex review.
+- Preferences store and localization foundation will be implemented in Session 12 (step-14 / D12).
+- Initial Codex review requested repair r1 for empty filter overrides, Prettier formatting, and arbitrary token replacement.
+
+## Session 11 Repair r1 — Step-13 / D11: URL Empty Overrides, Design Token & Formatting
+
+- **Date**: 2026-11-10
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Verified Baseline HEAD**: `47eec810c0d0c04e087f39813a498e1b28c0736b` (`main` tracking `origin/main` at Session 10 handoff)
+- **Branch**: `feat/orders-query-cache`
+
+### 1. Codex Initial Review Analysis & Repair Scope (r1)
+
+Codex reviewed the initial Session 11 implementation and identified three findings requiring repair round r1:
+
+1. **[P2] Preserve an explicit empty filter override**:
+   - The approved D12 rule establishes: URL parameter takes priority; saved Preferences `defaultFilters` applies only when the corresponding parameter is absent (`!searchParams.has(key)`). A present empty parameter (`?status=`, `?search=`, `?startDate=`, `?endDate=`) is an explicit user override meaning "no filter".
+   - Previously, filter handlers deleted parameters when their values became empty, and "Clear all" deleted all filter keys. This would cause saved defaults in D12 to reapply unexpectedly.
+   - Repair: Preserve explicit empty overrides when clearing individual filters or clicking "Clear all". Ensure "Clear all" sets all four filter keys to empty strings while preserving unrelated parameters (`pageSize`, `scenario`). Ensure later filter updates do not erase existing empty overrides. Keep absent parameters distinct for D12 fallback. Document in `docs/mock-api.md`.
+2. **[P2] Fix in-scope formatting failures**:
+   - Prettier checks flagged code style issues on `docs/ai-journal.md` and `src/components/providers/query-provider.tsx`.
+   - Repair: Run Prettier on in-scope files and verify clean exit code 0 on scoped checks. Full `pnpm format:check` may continue to report only the three pre-existing baseline files (`docs/delivery.md`, `docs/handoffs/session-03.md`, `pnpm-workspace.yaml`).
+3. **[P2] Remove arbitrary Tailwind value**:
+   - `src/features/orders/components/orders-list.tsx` used `min-h-[1.5rem]` near line 309. Arbitrary values violate Session rules.
+   - Repair: Replace with canonical design token `h-control-sm` (2rem / 32px), matching the adjacent `<Button size="sm">` element.
+
+### 2. Implementation Decisions
+
+- **URL Filter Absence vs. Present-Empty Handling**:
+  - `src/features/orders/components/orders-list.tsx`:
+    - Updated parameter parsing to distinguish parameter absence (`!searchParams.has(key)`) from present empty overrides (`searchParams.get(key) === ""`).
+    - In `handleFilterChange`: when a filter is updated with an empty string, set `newParams.set(key, "")` rather than deleting the parameter from the URL.
+    - In `handleResetFilters` ("Clear all"): explicitly sets all four filter parameters (`status=`, `search=`, `startDate=`, `endDate=`) as empty overrides, deletes `page` to reset pagination, and strictly preserves all unrelated parameters (`pageSize`, `scenario`).
+    - When calling `useOrders`, normalized empty strings and `null` to `undefined` (`statusParam?.trim() || undefined`) so the client queries all fixtures without sending empty parameters to MSW, while preserving the explicit overrides in the browser URL.
+  - `src/features/orders/components/orders-filters.tsx`:
+    - Decoupled filter change triggers: selecting status, updating debounced search, or changing start/end dates only passes the changed dimension to `onFilterChange`. This prevents unintended side-effects where updating one filter accidentally writes or removes overrides for other filters.
+    - Preserved local input state synchronization when URL search parameters change externally or upon reload.
+- **Design Token Conformance**:
+  - `src/features/orders/components/orders-list.tsx`: Replaced arbitrary utility `min-h-[1.5rem]` with canonical spacing token `h-control-sm` from `tailwind.config.ts`, directly aligning the refresh indicator row with `<Button size="sm">`.
+- **Documentation**:
+  - `docs/mock-api.md`: Documented the URL empty override convention, distinguishing absence vs. present-empty, explaining how Session 12 evaluates `usePreferencesStore`, and describing "Clear all" and unrelated query parameter preservation.
+- **Code Style & Formatting**:
+  - Formatted `src/components/providers/query-provider.tsx` and `docs/ai-journal.md` with Prettier.
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (strict TypeScript check passed with zero errors).
+- `pnpm lint`: Exit code 0 (1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully).
+- `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched files (`src/features/orders/components/orders-list.tsx`, `src/features/orders/components/orders-filters.tsx`, `src/components/providers/query-provider.tsx`, `docs/mock-api.md`, `docs/ai-journal.md`).
+- `pnpm format:check`: Exit code 1 (only the 3 documented pre-existing baseline files fail).
+- `git diff --check`: Exit code 0 (clean diff, zero whitespace issues).
+- **Playwright MCP Evidence (`output/playwright/session-11-r1/`)**:
+  - Responsive layout verified at 375px, 768px, 1280px, and 1920px viewports (0 page horizontal overflow; internal table scroll preserved).
+  - Untouched visit to `/orders`: all four filter parameters remain absent (`searchParams.toString() === ""`).
+  - Selecting "All Statuses": URL updates to `?status=`.
+  - Debounced search & clear: typing `001` updates to `?status=&search=001`, backspacing updates to `?status=&search=`.
+  - Clear all: clicking "Clear all" sets `?status=&search=&startDate=&endDate=` while preserving unrelated parameters (`pageSize=5`, `scenario=delay`).
+  - Modifying another filter: changing status to `pending` updates URL to `?status=pending&search=&startDate=&endDate=` without erasing other empty overrides.
+  - Reload restoration: reloading preserves URL parameters and exact UI control states.
+  - Complete artifacts and screenshots stored in `output/playwright/session-11-r1/`.
+
+### 4. Remaining Limitations & Next Steps
+
+- All work remains uncommitted and unstaged on branch `feat/orders-query-cache` awaiting Codex review.
+- Preferences store and localization foundation will be implemented in Session 12 (step-14 / D12).
+- Ready for Codex review.

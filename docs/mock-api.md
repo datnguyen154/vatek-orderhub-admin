@@ -1,21 +1,23 @@
 # OrderHub Admin Console — Mock API & Client Contract Documentation
 
-> **Status**: Session 09 / D10 Baseline  
-> **Applies to**: `src/lib/api/client.ts`, `src/features/orders/`, `src/mocks/`, `src/components/providers/mock-provider.tsx`
+> **Status**: Session 11 / D11 Baseline
+> **Applies to**: `src/lib/api/client.ts`, `src/features/orders/`, `src/mocks/`, `src/components/providers/query-provider.tsx`, `src/components/providers/mock-provider.tsx`
 
 ---
 
 ## 1. Overview & Architecture
 
-OrderHub Admin Console implements client-side API mocking using **Mock Service Worker (MSW)**. The mocking architecture adheres strictly to Next.js 15 App Router principles:
+OrderHub Admin Console implements client-side API mocking using **Mock Service Worker (MSW)** combined with **TanStack Query (v5)** client caching. The mocking architecture adheres strictly to Next.js 15 App Router principles:
 
 1. **Client-Only Mocking**:
    - The MSW service worker intercepts network requests executed by the browser's `window.fetch`.
    - MSW browser worker **cannot** intercept Server Component requests. Consequently, data-fetching components are structured as small Client Islands (`OrdersList`) embedded within Server Component page layouts (`OrdersPage`).
 2. **Deterministic & Realistic**:
    - Fixtures represent authentic B2B supply chain orders with realistic IDs, amounts, ISO 8601 timestamps, and statuses.
+   - Built against 10 known deterministic fixtures in `src/mocks/data/orders.ts`.
 3. **Fail-Safe & Honest**:
    - When mocking is disabled (`NEXT_PUBLIC_API_MOCKING=disabled`), requests are dispatched to the real configured endpoint. If the backend route does not exist, the real HTTP error (e.g., 404) is surfaced directly; the system never fabricates a false successful response.
+   - This document defines a deterministic browser/MSW mock contract for local development, automated verification, and demonstration. It does **not** claim a real Orders backend contract.
 
 ---
 
@@ -27,11 +29,28 @@ OrderHub Admin Console implements client-side API mocking using **Mock Service W
 - **Endpoint**: `/api/orders` (or resolved via `NEXT_PUBLIC_API_BASE_URL`)
 - **Headers**:
   - `Accept: application/json`
-  - `x-mock-scenario?: "success" | "delay" | "empty" | "error"` (optional)
+  - `x-mock-scenario?: "success" | "delay" | "empty" | "error" | "disabled"` (optional)
 - **Query Parameters**:
-  - `scenario?: "success" | "delay" | "empty" | "error"` (optional)
 
-### 2.2. Response Schema & Entity Types
+| Parameter   | Type     | Required | Default     | Description                                                                                          |
+| :---------- | :------- | :------- | :---------- | :--------------------------------------------------------------------------------------------------- |
+| `page`      | `number` | No       | `1`         | 1-based page index (must be an integer >= 1).                                                        |
+| `pageSize`  | `number` | No       | `5`         | Number of order records per page. `5` is selected to expose at least 2 pages across the 10 fixtures. |
+| `status`    | `string` | No       | `""` (all)  | Filter by exact `OrderStatus` (`pending`, `processing`, `shipped`, `delivered`, `cancelled`).        |
+| `search`    | `string` | No       | `""`        | Case-insensitive substring search matching order code (`orderCode`). Debounced in client UI.         |
+| `startDate` | `string` | No       | `""`        | Inclusive ISO 8601 date string (`YYYY-MM-DD`). Start boundary is UTC `00:00:00.000Z`.                |
+| `endDate`   | `string` | No       | `""`        | Inclusive ISO 8601 date string (`YYYY-MM-DD`). End boundary is UTC `23:59:59.999Z`.                  |
+| `scenario`  | `string` | No       | `"success"` | Mock scenario override (`"success"`, `"delay"`, `"empty"`, `"error"`, `"disabled"`).                 |
+
+### 2.2. Deterministic Date Boundaries
+
+All date filtering operates deterministically using UTC boundaries against the order's `createdAt` ISO 8601 timestamp:
+
+- `startDate=YYYY-MM-DD` expands to `new Date("${startDate}T00:00:00.000Z").getTime()`. Orders with `createdAt >= startMs` match.
+- `endDate=YYYY-MM-DD` expands to `new Date("${endDate}T23:59:59.999Z").getTime()`. Orders with `createdAt <= endMs` match.
+- When both are specified, orders matching `createdAt >= startMs && createdAt <= endMs` are included.
+
+### 2.3. Response Schema & Entity Types
 
 #### Success Response (`200 OK`)
 
@@ -49,7 +68,10 @@ OrderHub Admin Console implements client-side API mocking using **Mock Service W
       "itemCount": 12
     }
   ],
-  "total": 1
+  "total": 10,
+  "page": 1,
+  "pageSize": 5,
+  "totalPages": 2
 }
 ```
 
@@ -77,16 +99,118 @@ export interface Order {
 export interface OrdersResponse {
   data: Order[];
   total: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
 }
 ```
 
-### 2.3. Runtime Type Validation
+### 2.4. Runtime Type Validation
 
-All responses received by `apiClient` are treated as `unknown` and validated using explicit type guards (`isOrdersResponse`, `isOrder`, `isOrderStatus`) before returning to application code. Unsafe type assertions (`as OrdersResponse`) without validation are forbidden.
+All responses received by `apiClient` are treated as `unknown` and validated using explicit type guards (`isOrdersResponse`, `isOrder`, `isOrderStatus`) before returning to application code. Unsafe type assertions (`as OrdersResponse`) without runtime structural validation are strictly forbidden.
 
 ---
 
-## 3. Environment Configuration
+## 3. Query Cache Policy & Invalidation Contract
+
+### 3.1. TanStack Query Configuration
+
+Client data caching is managed via `@tanstack/react-query` configured in `src/components/providers/query-provider.tsx`:
+
+- **Cache `staleTime`**: `60 * 1000` (60 seconds)
+  - _Rationale_: In B2B operational consoles, orders data should not trigger redundant network refetches during routine navigation between views (e.g. visiting Preferences, opening navigation drawer, returning to Orders within the same minute). 60 seconds provides an optimal balance between freshness and UI responsiveness.
+- **Garbage Collection (`gcTime`)**: `5 * 60 * 1000` (5 minutes)
+  - _Rationale_: Retains inactive cache entries in memory so back/forward browser navigation or returning to page 1 serves immediately from memory without loading flicker.
+- **Window Focus Refetch**: `refetchOnWindowFocus: false` (avoids unexpected network refetches during multi-window admin operations).
+
+### 3.2. Stable Query Keys
+
+Orders query keys strictly incorporate every active parameter:
+
+```typescript
+const queryKey = [
+  "orders",
+  {
+    page: number,
+    pageSize: number,
+    status: string | null,
+    search: string | null,
+    startDate: string | null,
+    endDate: string | null,
+    scenario: string | null,
+  },
+] as const;
+```
+
+### 3.3. Misleading Page State Avoidance (`placeholderData`)
+
+To comply with the requirement that previous-page data must never produce a misleading page state:
+
+- When the query key changes (due to page change or filter change), `placeholderData` returns `undefined`. This triggers the skeleton loading state for the newly selected page rather than showing stale rows from the previous page with the new page indicator.
+- When refetching the exact same query key (e.g., clicking "Refresh" or background refetch), `placeholderData` retains the current data while `isFetching` indicates background activity.
+
+### 3.4. Future Invalidation Contract (Session 14 & 15)
+
+Later Week 3 tasks introduce mutation operations:
+
+1. **Create Order Wizard (Session 14 / D13 / step-16)**:
+   - On successful order creation, the mutation must invalidate the Orders list cache via:
+     ```typescript
+     queryClient.invalidateQueries({ queryKey: ["orders"] });
+     ```
+   - This ensures the newly created order appears on Page 1 upon return to `/orders`.
+2. **Order Status Change (Session 15 / D14 / step-17)**:
+   - On status transition (e.g. pending -> processing), the mutation must invalidate:
+     ```typescript
+     queryClient.invalidateQueries({ queryKey: ["orders"] });
+     queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+     ```
+   - This keeps both the Orders list and the Order detail view synchronized.
+
+---
+
+## 4. Forward-Compatible Filter & Preference Fallback Decision
+
+The user approved this rule for Session 12 (D12):
+
+> **Rule**: URL query parameters always take priority; a saved `defaultFilters` value is used only when its corresponding URL parameter is absent. A present empty parameter is an explicit override.
+
+### 4.1. URL Filter Presence vs. Explicit Empty Override Convention
+
+The client URL query string distinguishes between **parameter absence** and **present empty overrides**:
+
+- **Parameter Absence (`!searchParams.has(key)`)**:
+  - Indicates the user has not explicitly configured or touched this filter in the current URL session.
+  - An untouched visit to `/orders` produces an empty search query (`""`), where all filter parameters (`status`, `search`, `startDate`, `endDate`) are absent.
+  - In Session 12 (D12), absent parameters allow saved Preferences `defaultFilters` to apply as the fallback.
+- **Present Empty Override (`searchParams.has(key) === true && searchParams.get(key) === ""`)**:
+  - Formatted in the URL query string as `?status=`, `?search=`, `?startDate=`, or `?endDate=`.
+  - Signifies an explicit user action to clear or bypass filtering (e.g., selecting "All Statuses", clearing the search input, clearing date boundaries, or clicking "Clear all").
+  - In Session 12 (D12), present empty overrides explicitly suppress saved `defaultFilters`, enforcing an unfiltered state for that dimension.
+- **Independent Filter Updates**:
+  - Updating one filter dimension (e.g. typing a search query) only mutates its own key and never erases existing empty overrides on other dimensions (e.g. `?status=&search=ORD-1` preserves `status=`).
+- **"Clear all" Behavior**:
+  - The "Clear all" affordance explicitly writes empty overrides for all four filter dimensions (`?status=&search=&startDate=&endDate=`), deletes the `page` pagination parameter to return to page 1, and preserves all unrelated query parameters (such as `pageSize=5` or `scenario=latency`).
+- **Client Resolution & Mock API Query**:
+  - The client island resolves effective filter values before dispatching network requests. Empty strings (`""`) and absent parameters (`null`) are normalized to `undefined` when invoking `useOrders` / `getOrders`, allowing MSW to return unfiltered records cleanly while maintaining URL state integrity.
+
+### 4.2. Session 12 Integration Contract
+
+Session 11 implements URL-backed D11 filters only. The Preferences store is out of Session 11 scope (no Zustand or preferences store added).
+
+When Session 12 introduces `usePreferencesStore`, it can cleanly evaluate:
+
+```typescript
+const effectiveStatus = searchParams.has("status")
+  ? (searchParams.get("status") ?? "") // Present: explicit value or explicit override ("")
+  : preferences.defaultFilters.status; // Absent: fallback to saved default
+```
+
+This ensures complete backward and forward compatibility without breaking changes.
+
+---
+
+## 5. Environment Configuration
 
 | Variable                   | Values                      | Default                                                   | Purpose                                                                                                                                                                                                                      |
 | -------------------------- | --------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -95,36 +219,37 @@ All responses received by `apiClient` are treated as `unknown` and validated usi
 
 ---
 
-## 4. Reproducible Mock Scenarios
+## 6. Reproducible Mock Scenarios
 
 The mock handler supports four deterministic scenarios designed for testing and review:
 
-| Scenario            | Behavior                                              | Response                                             |
-| ------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
-| `success` (default) | Returns 10 deterministic B2B order fixtures.          | `200 OK` with full fixture array.                    |
-| `empty`             | Simulates a tenant or filter state with zero records. | `200 OK` with `{ data: [], total: 0 }`.              |
-| `error`             | Simulates an upstream database or network failure.    | `500 Internal Server Error` with JSON error payload. |
-| `delay`             | Injects 1500ms latency before returning fixtures.     | `200 OK` after 1500ms delay.                         |
+| Scenario            | Behavior                                              | Response                                                                     |
+| ------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `success` (default) | Returns paginated & filtered deterministic fixtures.  | `200 OK` with `{ data, total, page, pageSize, totalPages }`.                 |
+| `empty`             | Simulates a tenant or filter state with zero records. | `200 OK` with `{ data: [], total: 0, page: 1, pageSize: 5, totalPages: 0 }`. |
+| `error`             | Simulates an upstream database or network failure.    | `500 Internal Server Error` with JSON error payload.                         |
+| `delay`             | Injects 1500ms latency before returning fixtures.     | `200 OK` after 1500ms delay with full pagination/filters.                    |
+| `disabled`          | Bypasses MSW interception to hit real network.        | Real network response (e.g., 404 from Next.js server).                       |
 
 ### How to Select Scenarios for Local Review
 
-Scenarios can be selected without modifying source code or backend routes via any of the following mechanisms:
+Scenarios can be selected without modifying source code via:
 
 1. **Browser URL Query Parameter** (Recommended for review):
-   - Navigate to `http://localhost:3000/orders?scenario=empty`
-   - Navigate to `http://localhost:3000/orders?scenario=error`
-   - Navigate to `http://localhost:3000/orders?scenario=delay`
-   - Navigate to `http://localhost:3000/orders?scenario=success`
+   - `http://localhost:3000/orders?scenario=empty`
+   - `http://localhost:3000/orders?scenario=error`
+   - `http://localhost:3000/orders?scenario=delay`
+   - `http://localhost:3000/orders?scenario=success`
 2. **API Request Query Parameter**:
-   - Calling `getOrders({ scenario: "empty" })` automatically requests `/api/orders?scenario=empty`.
+   - Calling `getOrders({ scenario: "empty" })`.
 3. **HTTP Request Header**:
    - Pass header `x-mock-scenario: error`.
 4. **Browser LocalStorage**:
-   - Run in browser devtools: `localStorage.setItem("orderhub_mock_scenario", "error")`.
+   - In devtools console: `localStorage.setItem("orderhub_mock_scenario", "error")`.
 
 ---
 
-## 5. Mock-Disabled Behavior
+## 7. Mock-Disabled Behavior
 
 When `NEXT_PUBLIC_API_MOCKING=disabled`:
 
@@ -136,7 +261,7 @@ When `NEXT_PUBLIC_API_MOCKING=disabled`:
 
 ---
 
-## 6. Server/Client Boundaries & Gate 2 Rationale
+## 8. Server/Client Boundaries & Architecture Rationale
 
 - **`OrdersPage` (`src/app/(dashboard)/orders/page.tsx`)**:
   - Implemented as a **Server Component**.
@@ -144,5 +269,7 @@ When `NEXT_PUBLIC_API_MOCKING=disabled`:
   - Composes the interactive client island `<OrdersList />`.
 - **`OrdersList` (`src/features/orders/components/orders-list.tsx`)**:
   - Implemented as a **Client Component** (`"use client"`).
-  - Encapsulates async fetching, cancellation on unmount, loading skeletons, error retry, and empty state presentation.
+  - Wrapped in `<Suspense>` to ensure `useSearchParams()` never causes Next.js build deopt.
+  - Encapsulates URL synchronization, debounced search, status dropdown, date range controls, and pagination.
+  - Uses TanStack Query `useQuery` for cached order fetching with stable query keys.
   - Awaits `MockProvider` readiness before initiating data fetch to ensure zero unintercepted requests.
