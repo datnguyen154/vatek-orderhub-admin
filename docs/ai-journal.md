@@ -1312,3 +1312,50 @@ Codex identified two remaining evidence gaps in `r2-review.md`, and the user aut
 - Final repair round r3/3 is complete; all findings and evidence gaps addressed and verified.
 - All files remain uncommitted; no staging, commit, or push performed.
 - Handing over to Codex for final review and user staging/commit.
+
+## Session 09 Follow-up — CI Dependency Install Fix
+
+- **Date**: 2026-11-10
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Verified Baseline HEAD**: `231724d13a66973cfafcf2982f7d987e7a5605d8` (`feat/orders-list` user-committed HEAD)
+- **Branch**: `feat/orders-list`
+
+### 1. Task & Prompt Summary
+
+Resolve Vercel CI deployment failure on the Session 09 PR:
+`ERR_PNPM_IGNORED_BUILDS: Ignored build scripts: msw@2.7.3`
+`pnpm install exited with 1`
+
+### 2. Architecture & Security Decisions
+
+- **Local & CI pnpm Version**: Local runtime is confirmed as pnpm `11.25.0` (`pnpm --version`). In pnpm v11, lifecycle build scripts are blocked by default for security. The actual pnpm version running on Vercel remains unverified; we can only confirm the pinned version is used if deployment build logs verify that Corepack/`packageManager` was applied.
+- **Strict Workspace Build Configuration**:
+  - Created `pnpm-workspace.yaml` at capstone root configuring:
+    ```yaml
+    packages:
+      - "."
+    allowBuilds:
+      "msw@2.7.3": true
+    ```
+  - Explicitly authorized only `msw@2.7.3` build scripts while preserving strict dependency build isolation for all other packages.
+  - Avoided deprecated `pnpm.onlyBuiltDependencies` in `package.json`, avoided adding `.npmrc`, avoided turning off `strictDepBuilds`/`ignore-scripts`, avoided `dangerouslyAllowAllBuilds`, and avoided blanket script permissions.
+- **Lockfile Preservation**:
+  - Verified `pnpm install --frozen-lockfile` completed in 1.7s with exit code 0 (`Already up to date`).
+  - Confirmed `pnpm-lock.yaml` remained 100% untouched.
+
+### 3. Verification Results
+
+- `pnpm install --frozen-lockfile`: Exit code 0 (lockfile up to date, 0 modifications to `pnpm-lock.yaml`).
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript 5.8.2 strict check passed with 0 errors).
+- `pnpm lint`: Exit code 0 (ESLint 9 passed with 0 errors; 1 harmless warning on vendor `public/mockServiceWorker.js`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully in 5.0s; dynamic `/orders` at 4.97 kB / 115 kB).
+- `pnpm exec prettier --check pnpm-workspace.yaml docs/ai-journal.md docs/handoffs/session-09-ci-install-fix.md`: Exit code 0 (all touched in-scope files conform 100% to Prettier).
+- `pnpm format:check`: Exit code 1 (pre-existing baseline failure on 2 out-of-scope D6 files: `docs/delivery.md` and `docs/handoffs/session-03.md`).
+- `git diff --check`: Exit code 0 (clean diff, 0 whitespace anomalies).
+
+### 4. Remaining Limitations & Next Steps
+
+- All changes (`pnpm-workspace.yaml`, `docs/ai-journal.md`, `docs/handoffs/session-09-ci-install-fix.md`) remain uncommitted for Codex review.
+- Vercel has not been rerun after this change; build status remains pending. When the new build log is available, record the exact pnpm version and install outcome.
+- Ready for Codex review and user staging/commit.
