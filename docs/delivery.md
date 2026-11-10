@@ -1,6 +1,6 @@
 # OrderHub Admin Console — Delivery & Deployment
 
-This document records the actual GitHub and Vercel delivery state for the capstone. Last reviewed **2026-11-09**.
+This document records the actual GitHub and Vercel delivery state for the capstone. Last reviewed **2026-11-10**.
 
 ## 1. Repository and Branching
 
@@ -35,8 +35,9 @@ The D7 feature commit is `2b7f8d9f569454b19f4b5af82997d0a6f4369a69`; it is an an
 | D9 / Session 07 preview | [Orders preview](https://vatek-orderhub-admin-git-feat-dashboard-shell-dat-s-projects9.vercel.app/orders) | `da56268b09d843b501335b7d12b661295a34cdcc` on `feat/dashboard-shell` (local HEAD and cached upstream tracking ref match; deployment SHA/Ready reported by user) | Opened on 2026-11-09; deployed root loaded and unauthenticated `/orders` redirected to `/login`. User reports verifying the auth guard and mobile drawer at 375px/768px. Codex did not independently rerun the drawer interaction or 1280px/1920px preview checks. GitHub/Vercel metadata could not be refreshed because network lookup failed (`getaddrinfo() thread failed to start`). |
 
 | D9 / Session 08 preview | [Preferences preview](https://vatek-orderhub-admin-git-feat-route-states-dat-s-projects9.vercel.app/preferences) | `884a65364bf3e8ee0a1469a0812ae6963168796f` on `feat/route-states` (local HEAD and cached upstream tracking ref match; Vercel Ready/SHA reported by user) | Opened on 2026-11-09; preview root loaded. Direct `/preferences` access redirected unauthenticated user to `/login`, so the authenticated dashboard UI was not independently reviewed on this deployment. Vercel Ready is user-reported. |
+| D11 / Session 11 preview | [Orders preview](https://vatek-orderhub-admin-git-feat-orders-que-bad04f-dat-s-projects9.vercel.app/) | `a032a167a466d01343a624f36e1e1a6e83478f92` on `feat/orders-query-cache` (verified as local HEAD on 2026-11-10) | User reports the commit was pushed to a PR and the Vercel build is Ready. The preview URL and deployment status are user-reported; deployed SHA and live `/orders` behavior were not independently rechecked for this delivery update. Session 11 local Playwright report and screenshots under `output/playwright/session-11-r1/` were reviewed during code review; they are not live-preview evidence. |
 
-The live production page currently corresponds to the D6 baseline, while cached `origin/main` is at the D8 PR #3 merge. The D7 preview remains historically blocked by Vercel SSO. Session 05 and Session 06 previews have the route-specific smoke recorded above. Session 07 preview access and the unauthenticated `/orders` redirect were independently checked; drawer viewport verification is user-reported. Session 08 preview root was reachable, but direct `/preferences` access redirected to `/login`, so the authenticated dashboard UI was not reviewed on the deployment. Its Vercel Ready state is user-reported; the local feature branch and cached upstream ref match the reported commit SHA.
+The live production page currently corresponds to the D6 baseline, while cached `origin/main` is at the D8 PR #3 merge. The D7 preview remains historically blocked by Vercel SSO. Session 05 and Session 06 previews have the route-specific smoke recorded above. Session 07 preview access and the unauthenticated `/orders` redirect were independently checked; drawer viewport verification is user-reported. Session 08 preview root was reachable, but direct `/preferences` access redirected to `/login`, so the authenticated dashboard UI was not reviewed on the deployment. Its Vercel Ready state is user-reported; the local feature branch and cached upstream ref match the reported commit SHA. For Session 11, the user reports Vercel Ready and the PR push; the source commit matches the local feature branch HEAD, but deployment metadata and live preview behavior were not independently verified.
 
 ### Preview review protocol
 
@@ -47,6 +48,8 @@ For each materially new preview, record its URL, branch, full source SHA, review
 The D6 delivery session reported successful runs of `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm build`. These are historical results for that session, not a verification of the current working tree or the deployed D7 UI.
 
 The D7 and Session 06 reviews found that the repository-wide `pnpm format:check` fails on CRLF line endings in `docs/delivery.md` and `docs/handoffs/session-03.md`; all Session 06 and Session 07 touched source/handoff files passed scoped Prettier. Session 07 typecheck and lint passed on 2026-11-09. Its clean-output build first hit `EPERM` creating `.next/server/app/components`; after that generated output directory was pre-created, `pnpm build` passed with the non-blocking Next.js ESLint-plugin detection warning. `git diff --check` passed. A documentation refresh does not imply that all repository checks have been rerun. Record command, date, and exit status in the relevant session handoff when checks are run.
+
+Session 11 local review on 2026-11-10 at commit `a032a167a466d01343a624f36e1e1a6e83478f92`: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm build`, scoped Prettier on changed files, and `git diff --check` passed. Lint emitted the existing warning at `public/mockServiceWorker.js:1`. Repository-wide `pnpm format:check` remains blocked by the recorded baseline files `docs/delivery.md`, `docs/handoffs/session-03.md`, and `pnpm-workspace.yaml`. Session 11 Playwright artifacts are local review evidence; the Vercel preview was not independently checked.
 
 Run from the capstone root before a new PR:
 
