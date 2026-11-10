@@ -17,7 +17,7 @@ Install project dependencies:
 pnpm install
 ```
 
-> **Note on pnpm build scripts**: On modern pnpm (v10+), if pnpm prompts with `ERR_PNPM_IGNORED_BUILDS` regarding optional build scripts such as `sharp`, you can approve them using `pnpm approve-builds` / `pnpm approve-builds --all`, or install skipping lifecycle scripts via `pnpm install --ignore-scripts`.
+> **Note on pnpm build scripts**: This project uses pnpm's explicit build-script allowlist in `pnpm-workspace.yaml`, which currently permits only `msw@2.7.3`. If installation reports `ERR_PNPM_IGNORED_BUILDS`, confirm that the pinned pnpm version and workspace configuration are active. Do not approve every package or disable lifecycle scripts globally.
 
 ### 2. Environment Configuration
 

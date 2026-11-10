@@ -170,3 +170,18 @@ A fundamental requirement of Gate 2 and Next.js 15 App Router architecture is th
 | `pnpm exec prettier --check <touched_files>` | `0`       | Passed: All touched source and documentation files conform 100% to Prettier code style.                                                                                                |
 | `pnpm format:check`                          | `1`       | Pre-existing baseline failure: 2 pre-existing out-of-scope D6 files (`docs/delivery.md` and `docs/handoffs/session-03.md`) contain CRLF line endings. All in-scope files pass cleanly. |
 | `git diff --check`                           | `0`       | Passed: Clean diff with zero whitespace or line-ending anomalies.                                                                                                                      |
+
+---
+
+## Session 10 / Step-12 (D10) — Gate 2 Audit Addendum
+
+- **Date / baseline**: 2026-11-10; `main` at `5e65fb2c6084e7fb54c4f3b7c8ed5f6811ee5240`.
+- **Scope**: Documentation-only audit. See [`gate-2.md`](gate-2.md) for the criterion-by-criterion evidence matrix and limitations.
+- **Local Playwright**: Login, Catalogue, Preferences shell, and Orders were checked at 375x812, 768x1024, 1280x800, and 1920x1080. All measured page widths matched viewport widths. Orders success rendered 10 fixtures through MSW; loading, empty, error, and mock-disabled states were also reproduced. Mobile table scrolling stays inside the named data-table region.
+- **Keyboard / focus**: Login Tab order, validation focus/error association, visible focus, and mobile drawer Enter/Escape/focus restoration passed. Shell DOM identity persisted during Orders-to-Preferences navigation.
+- **Build-time mocking**: Local enabled build registered the worker and served 10 fixtures. A separate build compiled with `NEXT_PUBLIC_API_MOCKING=disabled` stayed unmocked after starting with runtime env set to `enabled`; `/api/orders` returned HTTP 404 and the accessible error/retry UI appeared.
+- **Vercel retest**: After Deployment Protection was turned off, Playwright GET to `/mockServiceWorker.js` returned HTTP 200 with `application/javascript; charset=utf-8`; its 8,213-byte body contained service-worker listener/install handlers. After demo login, `/orders` showed 10 of 10 fixtures, the active worker controlled the page, and `GET /api/orders` returned HTTP 200 from the service worker. Screenshot: `output/playwright/session-10/deployment-orders-1280x800.png`. The earlier SSO redirect was superseded by this retest.
+- **Live demo auth guard**: An unauthenticated Playwright navigation to `/orders` redirected to `/login` (HTTP 307). A throwaway demo session then loaded Orders. This does not establish production authentication or authorization.
+- **Environment scope / deployment baseline**: User confirms `NEXT_PUBLIC_API_MOCKING` is Config=`enabled` and `DEMO_SESSION_SECRET` is configured/enabled in Production, Preview, and Development; no secret value was recorded. Live worker activation and interception independently confirm effective mock-enabled client behavior. User confirms deployment baseline SHA `5e65fb2c6084e7fb54c4f3b7c8ed5f6811ee5240`; local `HEAD` and `origin/main` match.
+- **Checks**: Typecheck, lint, and build passed. Lint retained one vendor worker warning. `pnpm format:check` reported the same three baseline files outside this task's editable scope: `docs/delivery.md`, `docs/handoffs/session-03.md`, and `pnpm-workspace.yaml`. `git diff --check` passed after the D10 documentation edits.
+- **Decision**: D10 technical criteria pass. The mentor confirmation required for replacing Figma with the design-system baseline is not recorded; no mentor approval is asserted.
