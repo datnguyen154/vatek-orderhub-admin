@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { OrdersList } from "@/features/orders/components/orders-list";
 
 export const metadata: Metadata = {
   title: "Orders — OrderHub Admin Console",
@@ -16,12 +10,14 @@ export const metadata: Metadata = {
 /**
  * Orders Workspace Page — Server Component
  *
- * Minimal server-rendered destination establishing the app shell destination.
+ * Composes server-rendered header and client data island for Orders.
+ * - Server Component preserves SEO metadata and layout-level static shell.
+ * - Client data island (<OrdersList />) handles async fetching via browser MSW.
  */
 export default function OrdersPage() {
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+      {/* Page Header - Server Rendered */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -39,22 +35,8 @@ export default function OrdersPage() {
         </div>
       </header>
 
-      {/* Orders Workspace Status Card */}
-      <Card variant="default" size="md">
-        <CardHeader>
-          <CardTitle>Orders Overview</CardTitle>
-          <CardDescription>
-            Monitor order processing, view incoming shipments, and manage
-            fulfillment status across partner distribution channels.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-body text-muted-foreground">
-            No active order filters applied. Real-time fulfillment data and
-            search tools will populate here.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Orders Client Data Island */}
+      <OrdersList />
     </div>
   );
 }
