@@ -2,6 +2,7 @@
 
 import { startTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardHeader,
@@ -30,6 +31,7 @@ export default function OrdersError({
   reset,
 }: OrdersErrorProps) {
   const router = useRouter();
+  const t = useTranslations("orders");
 
   const handleRetry = () => {
     startTransition(() => {
@@ -42,10 +44,10 @@ export default function OrdersError({
     <div role="alert" aria-live="assertive" className="space-y-6">
       <header className="pb-2">
         <h1 className="text-page-title font-semibold text-foreground tracking-tight">
-          Orders
+          {t("title")}
         </h1>
         <p className="mt-1 text-body text-muted-foreground">
-          Fulfillment and lifecycle operations for customer orders
+          {t("description")}
         </p>
       </header>
 
@@ -70,16 +72,13 @@ export default function OrdersError({
                 />
               </svg>
             </span>
-            <CardTitle>Unable to load orders workspace</CardTitle>
+            <CardTitle>{t("routeErrorTitle")}</CardTitle>
           </div>
-          <CardDescription>
-            An unexpected error occurred while loading this view. You can retry
-            loading the workspace or return later.
-          </CardDescription>
+          <CardDescription>{t("routeErrorDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="primary" size="md" onClick={handleRetry}>
-            Retry loading
+            {t("routeRetry")}
           </Button>
         </CardContent>
       </Card>

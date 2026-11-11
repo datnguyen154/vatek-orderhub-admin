@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { LoginForm } from "@/features/auth/components/login-form";
 import {
   Card,
@@ -9,12 +10,17 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export const metadata: Metadata = {
-  title: "Sign in — OrderHub Admin Console",
-  description: "Sign in to OrderHub B2B Admin Console",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth");
+  return {
+    title: `${t("formTitle")} — OrderHub Admin Console`,
+    description: t("description"),
+  };
+}
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const t = await getTranslations("auth");
+
   return (
     <main className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6 lg:p-12">
       <div className="w-full max-w-container-max mx-auto">
@@ -30,18 +36,16 @@ export default function LoginPage() {
                   className="inline-block h-2 w-2 rounded-full bg-primary"
                   aria-hidden="true"
                 />
-                <span>B2B Console Preview</span>
+                <span>{t("previewBadge")}</span>
               </Badge>
               <h1
                 id="intro-heading"
                 className="text-page-title text-foreground font-semibold tracking-tight"
               >
-                OrderHub Admin Console
+                {t("title")}
               </h1>
               <p className="mt-3 text-body text-muted-foreground max-w-lg">
-                Centralized B2B fulfillment, inventory orchestration, and
-                operational visibility across partner networks. Built for
-                high-density operational workflows.
+                {t("description")}
               </p>
             </div>
 
@@ -71,11 +75,10 @@ export default function LoginPage() {
                 </span>
                 <div>
                   <strong className="font-semibold text-foreground">
-                    Real-time Fulfillment:
+                    {t("pillars.fulfillmentTitle")}
                   </strong>{" "}
                   <span className="text-muted-foreground">
-                    Track orders seamlessly from pending to fulfilled across all
-                    channels.
+                    {t("pillars.fulfillmentDesc")}
                   </span>
                 </div>
               </li>
@@ -100,11 +103,10 @@ export default function LoginPage() {
                 </span>
                 <div>
                   <strong className="font-semibold text-foreground">
-                    Access Control (Planned):
+                    {t("pillars.accessTitle")}
                   </strong>{" "}
                   <span className="text-muted-foreground">
-                    Role-based authorization is not yet implemented; this view
-                    serves purely as an unauthenticated UI preview.
+                    {t("pillars.accessDesc")}
                   </span>
                 </div>
               </li>
@@ -129,11 +131,10 @@ export default function LoginPage() {
                 </span>
                 <div>
                   <strong className="font-semibold text-foreground">
-                    High-Density UI:
+                    {t("pillars.uiTitle")}
                   </strong>{" "}
                   <span className="text-muted-foreground">
-                    Accessible, keyboard-navigable primitives optimized for
-                    daily administrative tasks.
+                    {t("pillars.uiDesc")}
                   </span>
                 </div>
               </li>
@@ -145,10 +146,7 @@ export default function LoginPage() {
                 className="inline-block h-2 w-2 rounded-full bg-primary"
                 aria-hidden="true"
               />
-              <span>
-                Session 06 UI Integration &bull; Authentication backend not
-                connected
-              </span>
+              <span>{t("statusIndicator")}</span>
             </div>
           </section>
 
@@ -167,10 +165,10 @@ export default function LoginPage() {
                   id="form-heading"
                   className="text-section-title font-semibold text-foreground"
                 >
-                  Sign in to your account
+                  {t("formTitle")}
                 </h2>
                 <CardDescription className="mt-1 text-body text-muted-foreground">
-                  Enter any demo credentials to test client-side validation.
+                  {t("formDescription")}
                 </CardDescription>
               </CardHeader>
 
@@ -180,8 +178,7 @@ export default function LoginPage() {
 
               <CardFooter className="p-0 mt-6 justify-center">
                 <p className="text-center text-caption text-muted-foreground">
-                  Demo environment for capstone evaluation. No credentials are
-                  stored.
+                  {t("formFooter")}
                 </p>
               </CardFooter>
             </Card>

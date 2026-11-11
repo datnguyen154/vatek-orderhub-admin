@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getDemoSessionFromCookies } from "@/lib/auth/demo-session";
 import { Topbar } from "@/components/layout/topbar";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -26,6 +27,8 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const t = await getTranslations("nav");
+
   return (
     <div className="min-h-screen bg-background">
       {/* Keyboard accessible skip-to-main link */}
@@ -33,7 +36,7 @@ export default async function DashboardLayout({
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-md focus:ring-2 focus:ring-focus focus:outline-none"
       >
-        Skip to main content
+        {t("skipToMain")}
       </a>
 
       {/* Persistent top navigation bar */}

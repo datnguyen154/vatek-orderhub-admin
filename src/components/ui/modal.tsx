@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
  *   <ModalContent
  *     title="Review Order #ORD-001"
  *     description="Review customer order details before fulfilling."
+ *     closeLabel="Close modal"
  *     variant="default"
  *     size="md"
  *   >
@@ -50,6 +51,7 @@ import { cn } from "@/lib/utils";
  *     size="sm"
  *     title="Cancel Order Confirmation"
  *     description="Are you sure you want to cancel this order? This action cannot be reversed."
+ *     closeLabel="Close modal"
  *   >
  *     <ModalBody>
  *       <p>Customer will receive an automated cancellation notice.</p>
@@ -118,6 +120,7 @@ export interface ModalContentProps
     VariantProps<typeof modalVariants> {
   title: React.ReactNode;
   description: React.ReactNode;
+  closeLabel: string;
   showCloseButton?: boolean;
 }
 
@@ -134,6 +137,7 @@ export const ModalContent = React.forwardRef<
       showCloseButton = true,
       title,
       description,
+      closeLabel,
       ...props
     },
     ref
@@ -154,7 +158,7 @@ export const ModalContent = React.forwardRef<
           {showCloseButton && (
             <DialogPrimitive.Close
               className="absolute right-4 top-4 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:pointer-events-none"
-              aria-label="Close modal"
+              aria-label={closeLabel}
             >
               <svg
                 className="h-4 w-4"
@@ -170,7 +174,7 @@ export const ModalContent = React.forwardRef<
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{closeLabel}</span>
             </DialogPrimitive.Close>
           )}
         </DialogPrimitive.Content>

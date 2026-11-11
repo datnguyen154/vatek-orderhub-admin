@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { OrdersList } from "@/features/orders/components/orders-list";
 
-export const metadata: Metadata = {
-  title: "Orders — OrderHub Admin Console",
-  description: "Fulfillment and lifecycle operations for customer orders",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("orders");
+  return {
+    title: `${t("title")} — OrderHub Admin Console`,
+    description: t("description"),
+  };
+}
 
 /**
  * Orders Workspace Page — Server Component
@@ -14,7 +18,9 @@ export const metadata: Metadata = {
  * - Server Component preserves SEO metadata and layout-level static shell.
  * - Client data island (<OrdersList />) handles async fetching via browser MSW.
  */
-export default function OrdersPage() {
+export default async function OrdersPage() {
+  const t = await getTranslations("orders");
+
   return (
     <div className="space-y-6">
       {/* Page Header - Server Rendered */}
@@ -22,15 +28,14 @@ export default function OrdersPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="neutral" size="sm">
-              Fulfillment
+              {t("badge")}
             </Badge>
           </div>
           <h1 className="text-page-title font-semibold text-foreground tracking-tight">
-            Orders
+            {t("title")}
           </h1>
           <p className="mt-1 text-body text-muted-foreground">
-            Manage customer orders, track fulfillment states, and review
-            shipments.
+            {t("description")}
           </p>
         </div>
       </header>

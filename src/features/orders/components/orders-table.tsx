@@ -4,12 +4,15 @@
  * Renders a semantic, accessible data table displaying customer orders.
  * - Semantic HTML: <table>, <caption>, <thead>, <tbody>, <th scope="col">
  * - Named horizontal scroll region with tabIndex={0} for keyboard accessibility at narrow widths
- * - Consistent formatting via Intl.NumberFormat and Intl.DateTimeFormat
- * - Accessible status badges with readable text (never color alone)
+ * - Consistent formatting via Intl.NumberFormat and Intl.DateTimeFormat with locale awareness
+ * - Accessible status badges with readable localized text (never color alone)
  * - Server pagination footer with Previous/Next controls and accessible announcements
  * - Strict adherence to B2B design tokens and 4px spacing scale
  */
 
+"use client";
+
+import { useTranslations, useLocale } from "next-intl";
 import type { Order, OrderStatus } from "../types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,11 +28,15 @@ export interface OrdersTableProps {
 }
 
 /**
- * Formats a numeric currency value into standardized USD representation.
+ * Formats a numeric currency value into standardized representation for the active locale.
  */
-export function formatCurrency(amount: number, currency = "USD"): string {
+export function formatCurrency(
+  amount: number,
+  currency = "USD",
+  locale = "en-US"
+): string {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: 2,
@@ -40,15 +47,15 @@ export function formatCurrency(amount: number, currency = "USD"): string {
 }
 
 /**
- * Formats an ISO 8601 date string into a clean readable date representation.
+ * Formats an ISO 8601 date string into a clean readable date representation for the active locale.
  */
-export function formatDate(dateString: string): string {
+export function formatDate(dateString: string, locale = "en-US"): string {
   try {
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) {
       return dateString;
     }
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(locale, {
       year: "numeric",
       month: "short",
       day: "2-digit",
@@ -59,23 +66,22 @@ export function formatDate(dateString: string): string {
 }
 
 /**
- * Maps an OrderStatus to the semantic Badge variant and human-readable label.
+ * Maps an OrderStatus to the semantic Badge variant.
  */
-function getStatusBadgeConfig(status: OrderStatus): {
-  variant: "success" | "warning" | "neutral" | "destructive";
-  label: string;
-} {
+function getStatusBadgeVariant(
+  status: OrderStatus
+): "success" | "warning" | "neutral" | "destructive" {
   switch (status) {
     case "delivered":
-      return { variant: "success", label: "Delivered" };
+      return "success";
     case "pending":
-      return { variant: "warning", label: "Pending" };
+      return "warning";
     case "processing":
-      return { variant: "neutral", label: "Processing" };
+      return "neutral";
     case "shipped":
-      return { variant: "neutral", label: "Shipped" };
+      return "neutral";
     case "cancelled":
-      return { variant: "destructive", label: "Cancelled" };
+      return "destructive";
   }
 }
 
@@ -88,6 +94,11 @@ export function OrdersTable({
   onPageChange,
   isFetching = false,
 }: OrdersTableProps) {
+  const t = useTranslations("orders.table");
+  const tStatus = useTranslations("orders.status");
+  const locale = useLocale();
+  const intlLocale = locale === "vi" ? "vi-VN" : "en-US";
+
   const showingFrom = total > 0 ? (page - 1) * pageSize + 1 : 0;
   const showingTo = total > 0 ? Math.min(page * pageSize, total) : 0;
 
@@ -96,43 +107,40 @@ export function OrdersTable({
       {/* Named Horizontal Scroll Region for Mobile & Tablet */}
       <div
         role="region"
-        aria-label="Orders Data Table"
+        aria-label={t("ariaLabel")}
         tabIndex={0}
         className="overflow-x-auto focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         <table className="w-full min-w-full text-left text-body border-collapse">
-          <caption className="sr-only">
-            Customer Orders Management Table showing order code, customer, date,
-            total, and fulfillment status.
-          </caption>
+          <caption className="sr-only">{t("caption")}</caption>
           <thead>
             <tr className="border-b border-border bg-muted/60 text-caption font-medium uppercase tracking-wider text-muted-foreground">
               <th scope="col" className="py-3 px-4 whitespace-nowrap">
-                Order Code
+                {t("colOrderCode")}
               </th>
               <th scope="col" className="py-3 px-4 whitespace-nowrap">
-                Customer
+                {t("colCustomer")}
               </th>
               <th scope="col" className="py-3 px-4 whitespace-nowrap">
-                Date
+                {t("colDate")}
               </th>
               <th
                 scope="col"
                 className="py-3 px-4 text-right whitespace-nowrap"
               >
-                Total
+                {t("colTotal")}
               </th>
               <th
                 scope="col"
                 className="py-3 px-4 text-center whitespace-nowrap"
               >
-                Status
+                {t("colStatus")}
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {orders.map((order) => {
-              const badge = getStatusBadgeConfig(order.status);
+              const variant = getStatusBadgeVariant(order.status);
               return (
                 <tr
                   key={order.id}
@@ -145,18 +153,20 @@ export function OrdersTable({
                     <div>{order.customerName}</div>
                     <div className="text-caption text-muted-foreground">
                       {order.itemCount}{" "}
-                      {order.itemCount === 1 ? "item" : "items"}
+                      {order.itemCount === 1
+                        ? t("itemSingle")
+                        : t("itemMultiple")}
                     </div>
                   </td>
                   <td className="py-3 px-4 text-body text-muted-foreground whitespace-nowrap">
-                    {formatDate(order.createdAt)}
+                    {formatDate(order.createdAt, intlLocale)}
                   </td>
                   <td className="py-3 px-4 font-mono text-body font-medium text-foreground text-right whitespace-nowrap">
-                    {formatCurrency(order.total, order.currency)}
+                    {formatCurrency(order.total, order.currency, intlLocale)}
                   </td>
                   <td className="py-3 px-4 text-center whitespace-nowrap">
-                    <Badge variant={badge.variant} size="sm">
-                      {badge.label}
+                    <Badge variant={variant} size="sm">
+                      {tStatus(order.status)}
                     </Badge>
                   </td>
                 </tr>
@@ -172,22 +182,22 @@ export function OrdersTable({
           <div className="text-body text-muted-foreground">
             {total > 0 ? (
               <>
-                Showing{" "}
+                {t("showing")}{" "}
                 <span className="font-medium text-foreground font-mono">
                   {showingFrom}
                 </span>{" "}
-                to{" "}
+                {t("to")}{" "}
                 <span className="font-medium text-foreground font-mono">
                   {showingTo}
                 </span>{" "}
-                of{" "}
+                {t("of")}{" "}
                 <span className="font-medium text-foreground font-mono">
                   {total}
                 </span>{" "}
-                orders
+                {t("ordersCount")}
               </>
             ) : (
-              "No orders to display"
+              t("noOrders")
             )}
           </div>
 
@@ -197,17 +207,17 @@ export function OrdersTable({
               size="sm"
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1 || isFetching}
-              aria-label="Go to previous page"
+              aria-label={t("prevAria")}
             >
-              Previous
+              {t("prev")}
             </Button>
 
             <span className="text-body text-muted-foreground px-2">
-              Page{" "}
+              {t("page")}{" "}
               <span className="font-medium text-foreground font-mono">
                 {page}
               </span>{" "}
-              of{" "}
+              {t("pageOf")}{" "}
               <span className="font-medium text-foreground font-mono">
                 {Math.max(1, totalPages)}
               </span>
@@ -218,9 +228,9 @@ export function OrdersTable({
               size="sm"
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages || isFetching}
-              aria-label="Go to next page"
+              aria-label={t("nextAria")}
             >
-              Next
+              {t("next")}
             </Button>
           </div>
         </div>

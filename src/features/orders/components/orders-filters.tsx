@@ -13,6 +13,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ORDER_STATUSES, type OrderStatus } from "../types";
@@ -45,6 +46,9 @@ export function OrdersFilters({
   onResetFilters,
   disabled = false,
 }: OrdersFiltersProps) {
+  const t = useTranslations("orders.filters");
+  const tStatus = useTranslations("orders.status");
+
   // Local state for debounced search and immediate local input synchronization
   const [localSearch, setLocalSearch] = useState(search);
   const [localStartDate, setLocalStartDate] = useState(startDate);
@@ -110,12 +114,12 @@ export function OrdersFilters({
             htmlFor="orders-filter-search"
             className="block text-caption font-medium text-foreground"
           >
-            Order Code Search
+            {t("searchLabel")}
           </label>
           <Input
             id="orders-filter-search"
             type="search"
-            placeholder="e.g. ORD-2026-001"
+            placeholder={t("searchPlaceholder")}
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             disabled={disabled}
@@ -130,7 +134,7 @@ export function OrdersFilters({
             htmlFor="orders-filter-status"
             className="block text-caption font-medium text-foreground"
           >
-            Status
+            {t("statusLabel")}
           </label>
           <Select
             id="orders-filter-status"
@@ -144,10 +148,10 @@ export function OrdersFilters({
             size="sm"
             className="w-full capitalize"
           >
-            <option value="">All Statuses</option>
+            <option value="">{t("allStatuses")}</option>
             {ORDER_STATUSES.map((s: OrderStatus) => (
               <option key={s} value={s} className="capitalize">
-                {s.charAt(0).toUpperCase() + s.slice(1)}
+                {tStatus(s)}
               </option>
             ))}
           </Select>
@@ -159,7 +163,7 @@ export function OrdersFilters({
             htmlFor="orders-filter-start-date"
             className="block text-caption font-medium text-foreground"
           >
-            From Date
+            {t("startDateLabel")}
           </label>
           <Input
             id="orders-filter-start-date"
@@ -179,7 +183,7 @@ export function OrdersFilters({
               htmlFor="orders-filter-end-date"
               className="block text-caption font-medium text-foreground"
             >
-              To Date
+              {t("endDateLabel")}
             </label>
             {hasActiveFilters && (
               <button
@@ -187,7 +191,7 @@ export function OrdersFilters({
                 onClick={onResetFilters}
                 className="text-caption font-medium text-primary hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-sm transition-colors"
               >
-                Clear all
+                {t("clearAll")}
               </button>
             )}
           </div>

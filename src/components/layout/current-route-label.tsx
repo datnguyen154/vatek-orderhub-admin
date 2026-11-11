@@ -1,11 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-
-const routeLabels: Record<string, string> = {
-  "/orders": "Orders",
-  "/preferences": "Preferences",
-};
+import { useTranslations } from "next-intl";
 
 /**
  * Current Route Label — Client Leaf Component
@@ -16,15 +12,14 @@ const routeLabels: Record<string, string> = {
  */
 export function CurrentRouteLabel() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
 
-  let label = "Orders";
+  let label = t("orders");
   if (pathname) {
     if (pathname.startsWith("/preferences")) {
-      label = "Preferences";
+      label = t("preferences");
     } else if (pathname.startsWith("/orders")) {
-      label = "Orders";
-    } else if (routeLabels[pathname]) {
-      label = routeLabels[pathname];
+      label = t("orders");
     }
   }
 

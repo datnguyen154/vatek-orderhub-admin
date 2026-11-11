@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 /**
@@ -10,7 +11,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
  * - Uses semantic design tokens (bg-muted, rounded-md, animate-pulse, motion-reduce:animate-none).
  * - Matches the existing Orders layout header and documented future table hierarchy (toolbar, headers, rows).
  */
-export default function OrdersLoading() {
+export default async function OrdersLoading() {
+  const t = await getTranslations("orders");
+
   return (
     <div
       role="status"
@@ -18,7 +21,7 @@ export default function OrdersLoading() {
       aria-live="polite"
       className="space-y-6"
     >
-      <span className="sr-only">Loading orders workspace...</span>
+      <span className="sr-only">{t("loadingWorkspace")}</span>
 
       {/* Header Skeleton */}
       <div className="pb-2 space-y-2" aria-hidden="true">

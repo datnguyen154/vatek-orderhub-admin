@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Modal,
@@ -11,54 +12,6 @@ import {
   ModalBody,
 } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
-
-const navigationItems = [
-  {
-    name: "Orders",
-    href: "/orders",
-    icon: (
-      <svg
-        className="h-4 w-4 shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-        />
-      </svg>
-    ),
-  },
-  {
-    name: "Preferences",
-    href: "/preferences",
-    icon: (
-      <svg
-        className="h-4 w-4 shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-      </svg>
-    ),
-  },
-];
 
 /**
  * Mobile Navigation Drawer
@@ -77,6 +30,55 @@ const navigationItems = [
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const t = useTranslations("nav");
+
+  const navigationItems = [
+    {
+      name: t("orders"),
+      href: "/orders",
+      icon: (
+        <svg
+          className="h-4 w-4 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: t("preferences"),
+      href: "/preferences",
+      icon: (
+        <svg
+          className="h-4 w-4 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </svg>
+      ),
+    },
+  ];
 
   return (
     <div className="lg:hidden">
@@ -86,7 +88,7 @@ export function MobileNav() {
           <Button
             variant="ghost"
             size="sm"
-            aria-label="Open navigation menu"
+            aria-label={t("mobileMenuTriggerAria")}
             className="p-2"
           >
             <svg
@@ -108,13 +110,14 @@ export function MobileNav() {
 
         {/* Accessible Radix modal navigation drawer anchored to the viewport edge */}
         <ModalContent
-          title="Navigation"
-          description="OrderHub console navigation"
+          title={t("mobileDrawerTitle")}
+          description={t("mobileDrawerDesc")}
+          closeLabel={t("closeDrawer")}
           size="sm"
           className="fixed inset-y-0 left-0 top-0 bottom-0 h-full w-sidebar max-w-full rounded-none border-y-0 border-l-0 border-r border-border bg-surface shadow-lg"
         >
           <ModalBody className="flex-1 overflow-y-auto px-3 py-4">
-            <nav aria-label="Mobile Navigation" className="space-y-1">
+            <nav aria-label={t("mobileNavAria")} className="space-y-1">
               {navigationItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
