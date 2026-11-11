@@ -2,10 +2,12 @@
  * OrderHub Admin Console — Orders List Client Island
  *
  * Implements the interactive data island within the Orders route:
- * - URL-backed filter state: debounced search, status dropdown, date range
+ * - URL-backed filter state with saved Preferences default fallback
+ * - URL query parameters always outrank saved defaults; empty parameter is explicit override
  * - Server pagination with persistent URL page query
  * - TanStack Query cache with background refetch distinction
  * - Accessible loading skeleton, error with retry, and empty state
+ * - Full localization via next-intl
  * - Strict adherence to B2B design tokens and 4px spacing scale
  */
 
@@ -13,9 +15,14 @@
 
 import { Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useOrders } from "../hooks/use-orders";
 import { OrdersTable } from "./orders-table";
 import { OrdersFilters } from "./orders-filters";
+import {
+  usePreferencesStore,
+  INITIAL_DEFAULT_FILTERS,
+} from "@/features/preferences/store";
 import {
   Card,
   CardHeader,
@@ -26,6 +33,8 @@ import {
 import { Button } from "@/components/ui/button";
 
 function OrdersLoadingSkeleton() {
+  const t = useTranslations("orders");
+
   return (
     <div
       role="status"
@@ -33,7 +42,7 @@ function OrdersLoadingSkeleton() {
       aria-live="polite"
       className="space-y-4"
     >
-      <span className="sr-only">Loading customer orders data...</span>
+      <span className="sr-only">{t("loadingSr")}</span>
       <div className="flex items-center justify-between pb-2">
         <div className="h-6 w-32 bg-muted animate-pulse rounded-md motion-reduce:animate-none" />
         <div className="h-9 w-24 bg-muted animate-pulse rounded-md motion-reduce:animate-none" />
@@ -70,6 +79,7 @@ function OrdersLoadingSkeleton() {
 }
 
 function OrdersListContent() {
+  const t = useTranslations("orders");
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -91,6 +101,30 @@ function OrdersListContent() {
   const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
   const pageSize = Math.max(1, parseInt(pageSizeParam || "5", 10) || 5);
 
+  // Read saved Preferences store defaults with hydration safety
+  const defaultFilters = usePreferencesStore((s) => s.defaultFilters);
+  const hasHydrated = usePreferencesStore((s) => s.hasHydrated);
+
+  const effectiveDefaults = hasHydrated
+    ? defaultFilters
+    : INITIAL_DEFAULT_FILTERS;
+
+  // Precedence rule:
+  // For each filter independently, if key exists in URL: use URL value (even if "").
+  // If key absent from URL: fall back to saved defaultFilters value.
+  const effectiveStatus = hasStatusParam
+    ? (statusParam ?? "")
+    : effectiveDefaults.status;
+  const effectiveSearch = hasSearchParam
+    ? (searchParam ?? "")
+    : effectiveDefaults.search;
+  const effectiveStartDate = hasStartDateParam
+    ? (startDateParam ?? "")
+    : effectiveDefaults.startDate;
+  const effectiveEndDate = hasEndDateParam
+    ? (endDateParam ?? "")
+    : effectiveDefaults.endDate;
+
   const {
     orders,
     total,
@@ -106,10 +140,10 @@ function OrdersListContent() {
   } = useOrders({
     page,
     pageSize,
-    status: statusParam?.trim() || undefined,
-    search: searchParam?.trim() || undefined,
-    startDate: startDateParam?.trim() || undefined,
-    endDate: endDateParam?.trim() || undefined,
+    status: effectiveStatus.trim() || undefined,
+    search: effectiveSearch.trim() || undefined,
+    startDate: effectiveStartDate.trim() || undefined,
+    endDate: effectiveEndDate.trim() || undefined,
     scenario: scenarioParam,
   });
 
@@ -172,10 +206,10 @@ function OrdersListContent() {
     <div className="space-y-6">
       {/* 1. URL-Backed Filter Controls */}
       <OrdersFilters
-        status={statusParam ?? ""}
-        search={searchParam ?? ""}
-        startDate={startDateParam ?? ""}
-        endDate={endDateParam ?? ""}
+        status={effectiveStatus}
+        search={effectiveSearch}
+        startDate={effectiveStartDate}
+        endDate={effectiveEndDate}
         hasStatusParam={hasStatusParam}
         hasSearchParam={hasSearchParam}
         hasStartDateParam={hasStartDateParam}
@@ -208,18 +242,16 @@ function OrdersListContent() {
                   />
                 </svg>
               </span>
-              <CardTitle>Mock Service Error</CardTitle>
+              <CardTitle>{t("mockErrorTitle")}</CardTitle>
             </div>
-            <CardDescription>
-              The browser mock service worker failed to start.
-            </CardDescription>
+            <CardDescription>{t("mockErrorDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-body text-destructive font-mono text-caption">
               {mockError}
             </p>
             <Button variant="primary" size="md" onClick={refetch}>
-              Retry Initialization
+              {t("retryInit")}
             </Button>
           </CardContent>
         </Card>
@@ -252,16 +284,15 @@ function OrdersListContent() {
                     />
                   </svg>
                 </span>
-                <CardTitle>Unable to load orders</CardTitle>
+                <CardTitle>{t("errorTitle")}</CardTitle>
               </div>
               <CardDescription>
-                {errorMessage ||
-                  "An unexpected network or server error occurred while retrieving order data."}
+                {errorMessage || t("errorDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="primary" size="md" onClick={refetch}>
-                Retry loading orders
+                {t("retryLoading")}
               </Button>
             </CardContent>
           </Card>
@@ -273,11 +304,8 @@ function OrdersListContent() {
         <div role="status" aria-live="polite" className="space-y-4">
           <Card variant="default" size="md">
             <CardHeader>
-              <CardTitle>No orders found</CardTitle>
-              <CardDescription>
-                There are currently no customer orders matching the active
-                filter criteria.
-              </CardDescription>
+              <CardTitle>{t("emptyTitle")}</CardTitle>
+              <CardDescription>{t("emptyDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="flex items-center gap-3">
               <Button
@@ -285,10 +313,10 @@ function OrdersListContent() {
                 size="md"
                 onClick={handleResetFilters}
               >
-                Clear filters
+                {t("clearFilters")}
               </Button>
               <Button variant="ghost" size="md" onClick={refetch}>
-                Refresh
+                {t("refresh")}
               </Button>
             </CardContent>
           </Card>
@@ -308,12 +336,12 @@ function OrdersListContent() {
                   className="inline-flex items-center gap-2 text-caption text-primary font-medium"
                 >
                   <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  Updating orders...
+                  {t("updating")}
                 </span>
               )}
             </div>
             <Button variant="secondary" size="sm" onClick={refetch}>
-              Refresh
+              {t("refresh")}
             </Button>
           </div>
 

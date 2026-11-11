@@ -60,6 +60,54 @@
   --radius-lg: 0.5rem; /* 8px */
 }
 
+.dark {
+  color-scheme: dark;
+
+  /* Semantic Colors for Dark Theme (WCAG AA/AAA compliant contrast) */
+  --color-background: 15 23 42; /* #0f172a slate-900 canvas */
+  --color-foreground: 248 250 252; /* #f8fafc slate-50 text (16.5:1 on background) */
+
+  --color-surface: 30 41 59; /* #1e293b slate-800 elevated panels/tables */
+  --color-surface-foreground: 248 250 252; /* #f8fafc slate-50 (13.9:1 on surface) */
+
+  --color-muted: 51 65 85; /* #334155 slate-700 table headers/subdued regions */
+  --color-muted-foreground: 148 163 184; /* #94a3b8 slate-400 (5.59:1 on surface, > 4.5:1 AA) */
+
+  /* Decorative & Structural Borders */
+  --color-border: 51 65 85; /* #334155 */
+  --color-border-hover: 71 85 105; /* #475569 */
+
+  /* Functional Interactive Control Borders (WCAG Non-text Contrast >= 3:1) */
+  --color-control-border: 100 116 139; /* #64748b slate-500 (3.1:1 on surface) */
+  --color-control-border-hover: 148 163 184; /* #94a3b8 */
+
+  --color-primary: 37 99 235; /* #2563eb */
+  --color-primary-hover: 29 78 216; /* #1d4ed8 */
+  --color-primary-foreground: 255 255 255; /* #ffffff (4.65:1 on primary) */
+  --color-primary-muted: 30 58 138; /* #1e3a8a */
+  --color-primary-muted-foreground: 147 197 253; /* #93c5fd (7.2:1 AAA) */
+
+  --color-destructive: 220 38 38; /* #dc2626 */
+  --color-destructive-hover: 185 28 28; /* #b91c1c */
+  --color-destructive-foreground: 255 255 255; /* #ffffff */
+  --color-destructive-muted: 69 10 10; /* #450a0a */
+  --color-destructive-muted-foreground: 252 165 165; /* #fca5a5 (7.5:1 AAA) */
+
+  --color-success: 22 163 74; /* #16a34a */
+  --color-success-hover: 21 128 61; /* #15803d */
+  --color-success-foreground: 255 255 255; /* #ffffff */
+  --color-success-muted: 5 46 22; /* #052e16 */
+  --color-success-muted-foreground: 134 239 172; /* #86efac (7.6:1 AAA) */
+
+  --color-warning: 217 119 6; /* #d97706 */
+  --color-warning-hover: 180 83 9; /* #b45309 */
+  --color-warning-foreground: 255 255 255; /* #ffffff */
+  --color-warning-muted: 69 26 3; /* #451a03 */
+  --color-warning-muted-foreground: 252 211 77; /* #fcd34d (7.1:1 AAA) */
+
+  --color-focus: 96 165 250; /* #60a5fa visible focus ring on dark surfaces */
+}
+
 @layer base {
   body {
     background-color: rgb(var(--color-background));

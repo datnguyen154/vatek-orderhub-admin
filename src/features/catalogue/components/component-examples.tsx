@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/modal";
 
 export function ModalExamples() {
+  const t = useTranslations("catalogue.modalExamples");
   const [lastAction, setLastAction] = useState<string | null>(null);
 
   return (
@@ -25,41 +27,45 @@ export function ModalExamples() {
         <Modal>
           <ModalTrigger asChild>
             <Button variant="primary" size="md">
-              Open Default Modal (md)
+              {t("modal1Trigger")}
             </Button>
           </ModalTrigger>
           <ModalContent
             variant="default"
             size="md"
-            title="Confirm Order Dispatch"
-            description="Review dispatch parameters before notifying fulfillment carriers."
+            title={t("modal1Title")}
+            description={t("modal1Desc")}
+            closeLabel={t("closeModal")}
           >
             <ModalBody className="space-y-3">
               <p className="text-foreground">
-                You are about to release order{" "}
-                <span className="font-mono font-semibold text-primary">
-                  #ORD-7821
-                </span>{" "}
-                for immediate carrier pickup.
+                {t.rich("modal1Body", {
+                  orderId: (chunks) => (
+                    <span className="font-mono font-semibold text-primary">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </p>
               <div className="rounded-md border border-border bg-muted p-3 text-caption text-muted-foreground">
-                Destination: Logistics Hub B &bull; Estimated departure: 14:00
-                UTC
+                {t("modal1Destination")}
               </div>
             </ModalBody>
             <ModalFooter>
               <ModalClose asChild>
                 <Button variant="secondary" size="md">
-                  Cancel
+                  {t("modal1Cancel")}
                 </Button>
               </ModalClose>
               <ModalClose asChild>
                 <Button
                   variant="primary"
                   size="md"
-                  onClick={() => setLastAction("Dispatched #ORD-7821")}
+                  onClick={() =>
+                    setLastAction(t("actionDispatched", { id: "#ORD-7821" }))
+                  }
                 >
-                  Confirm Dispatch
+                  {t("modal1Confirm")}
                 </Button>
               </ModalClose>
             </ModalFooter>
@@ -70,37 +76,42 @@ export function ModalExamples() {
         <Modal>
           <ModalTrigger asChild>
             <Button variant="destructive" size="md">
-              Open Destructive Modal (sm)
+              {t("modal2Trigger")}
             </Button>
           </ModalTrigger>
           <ModalContent
             variant="destructive"
             size="sm"
-            title="Cancel Fulfillment Order"
-            description="This action is immediate and marks the allocated inventory as returned."
+            title={t("modal2Title")}
+            description={t("modal2Desc")}
+            closeLabel={t("closeModal")}
           >
             <ModalBody className="space-y-3">
               <p className="text-foreground">
-                Are you sure you want to cancel order{" "}
-                <span className="font-mono font-semibold text-destructive">
-                  #ORD-7821
-                </span>
-                ? This operation cannot be reversed.
+                {t.rich("modal2Body", {
+                  orderId: (chunks) => (
+                    <span className="font-mono font-semibold text-destructive">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </p>
             </ModalBody>
             <ModalFooter>
               <ModalClose asChild>
                 <Button variant="secondary" size="md">
-                  Dismiss
+                  {t("modal2Dismiss")}
                 </Button>
               </ModalClose>
               <ModalClose asChild>
                 <Button
                   variant="destructive"
                   size="md"
-                  onClick={() => setLastAction("Cancelled #ORD-7821")}
+                  onClick={() =>
+                    setLastAction(t("actionCancelled", { id: "#ORD-7821" }))
+                  }
                 >
-                  Cancel Order
+                  {t("modal2Confirm")}
                 </Button>
               </ModalClose>
             </ModalFooter>
@@ -111,29 +122,30 @@ export function ModalExamples() {
         <Modal>
           <ModalTrigger asChild>
             <Button variant="secondary" size="md">
-              Open Muted Modal (lg)
+              {t("modal3Trigger")}
             </Button>
           </ModalTrigger>
           <ModalContent
             variant="muted"
             size="lg"
-            title="Order Item Breakdown"
-            description="Detailed manifest of product quantities, lot codes, and warehouse bays."
+            title={t("modal3Title")}
+            description={t("modal3Desc")}
+            closeLabel={t("closeModal")}
           >
             <ModalBody className="space-y-3">
               <div className="rounded-md border border-border bg-surface p-4">
                 <div className="flex items-center justify-between pb-2 border-b border-border text-caption font-semibold text-foreground">
-                  <span>SKU / Description</span>
-                  <span>Qty / Bay</span>
+                  <span>{t("manifestSkuHeader")}</span>
+                  <span>{t("manifestQtyHeader")}</span>
                 </div>
                 <div className="space-y-2 pt-2 text-caption text-foreground">
                   <div className="flex justify-between">
                     <span>VATEK-Industrial-Sensor-X1</span>
-                    <span className="font-mono">40 units &bull; Bay 12</span>
+                    <span className="font-mono">{t("manifestRow1Units")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>VATEK-Controller-Pro-2026</span>
-                    <span className="font-mono">15 units &bull; Bay 04</span>
+                    <span className="font-mono">{t("manifestRow2Units")}</span>
                   </div>
                 </div>
               </div>
@@ -141,7 +153,7 @@ export function ModalExamples() {
             <ModalFooter>
               <ModalClose asChild>
                 <Button variant="secondary" size="md">
-                  Close Breakdown
+                  {t("modal3Close")}
                 </Button>
               </ModalClose>
             </ModalFooter>
@@ -152,14 +164,15 @@ export function ModalExamples() {
         <Modal>
           <ModalTrigger asChild>
             <Button variant="ghost" size="md">
-              Open Audit Log Modal (xl)
+              {t("modal4Trigger")}
             </Button>
           </ModalTrigger>
           <ModalContent
             variant="default"
             size="xl"
-            title="System Audit & Lifecycle Trail"
-            description="Append-only verification log tracking order state transitions across operators."
+            title={t("modal4Title")}
+            description={t("modal4Desc")}
+            closeLabel={t("closeModal")}
           >
             <ModalBody className="space-y-3">
               <div className="space-y-2 text-caption">
@@ -167,22 +180,18 @@ export function ModalExamples() {
                   <span className="font-mono text-muted-foreground">
                     09:12:04
                   </span>
-                  <span className="text-foreground">
-                    Order received from EDI Partner gateway
-                  </span>
+                  <span className="text-foreground">{t("logEntry1Text")}</span>
                   <Badge variant="success" size="sm">
-                    Ingested
+                    {t("logEntry1Badge")}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded bg-muted">
                   <span className="font-mono text-muted-foreground">
                     09:15:30
                   </span>
-                  <span className="text-foreground">
-                    Inventory hold confirmed at Hub B
-                  </span>
+                  <span className="text-foreground">{t("logEntry2Text")}</span>
                   <Badge variant="warning" size="sm">
-                    Reserved
+                    {t("logEntry2Badge")}
                   </Badge>
                 </div>
               </div>
@@ -190,7 +199,7 @@ export function ModalExamples() {
             <ModalFooter>
               <ModalClose asChild>
                 <Button variant="primary" size="md">
-                  Acknowledge Log
+                  {t("modal4Ack")}
                 </Button>
               </ModalClose>
             </ModalFooter>
@@ -204,7 +213,7 @@ export function ModalExamples() {
           aria-live="polite"
           className="text-caption font-medium text-primary"
         >
-          Last action: {lastAction}
+          {t("lastAction", { action: lastAction })}
         </p>
       )}
     </div>
@@ -212,6 +221,7 @@ export function ModalExamples() {
 }
 
 export function InteractiveButtonSandbox() {
+  const t = useTranslations("catalogue.buttonSandbox");
   const [isLoading, setIsLoading] = useState(false);
   const [clickCount, setClickCount] = useState(0);
 
@@ -232,7 +242,7 @@ export function InteractiveButtonSandbox() {
           loading={isLoading}
           onClick={simulateAsync}
         >
-          {isLoading ? "Processing Request..." : "Simulate Async Operation"}
+          {isLoading ? t("processing") : t("simulateAsync")}
         </Button>
 
         <Button
@@ -240,19 +250,21 @@ export function InteractiveButtonSandbox() {
           size="sm"
           onClick={() => setIsLoading((prev) => !prev)}
         >
-          Toggle Loading State: {isLoading ? "Active" : "Inactive"}
+          {t("toggleLoading", {
+            state: isLoading ? t("stateActive") : t("stateInactive"),
+          })}
         </Button>
       </div>
 
       <p className="text-caption text-muted-foreground">
-        Interactive operations completed:{" "}
-        <span className="font-semibold text-foreground">{clickCount}</span>
+        {t("completed", { count: clickCount })}
       </p>
     </Card>
   );
 }
 
 export function InteractiveFormSandbox() {
+  const t = useTranslations("catalogue.formSandbox");
   const [inputValue, setInputValue] = useState("");
   const [isInvalid, setIsInvalid] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
@@ -268,7 +280,7 @@ export function InteractiveFormSandbox() {
             onChange={(e) => setIsInvalid(e.target.checked)}
             className="rounded border-control-border"
           />
-          <span>Toggle Error State (`aria-invalid`)</span>
+          <span>{t("toggleError")}</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer text-foreground">
           <input
@@ -277,7 +289,7 @@ export function InteractiveFormSandbox() {
             onChange={(e) => setIsDisabled(e.target.checked)}
             className="rounded border-control-border"
           />
-          <span>Toggle Disabled State</span>
+          <span>{t("toggleDisabled")}</span>
         </label>
       </div>
 
@@ -287,7 +299,7 @@ export function InteractiveFormSandbox() {
             htmlFor="sandbox-input"
             className="block text-caption font-medium text-foreground mb-1"
           >
-            Sandbox Text Input
+            {t("inputLabel")}
           </label>
           <Input
             id="sandbox-input"
@@ -296,7 +308,7 @@ export function InteractiveFormSandbox() {
             disabled={isDisabled}
             aria-invalid={isInvalid ? "true" : "false"}
             aria-describedby={isInvalid ? "sandbox-input-err" : undefined}
-            placeholder="Type live value..."
+            placeholder={t("inputPlaceholder")}
           />
           {isInvalid && (
             <p
@@ -304,7 +316,7 @@ export function InteractiveFormSandbox() {
               role="alert"
               className="mt-1 text-caption text-destructive"
             >
-              Validation error: please enter an approved SKU code.
+              {t("inputError")}
             </p>
           )}
         </div>
@@ -314,7 +326,7 @@ export function InteractiveFormSandbox() {
             htmlFor="sandbox-select"
             className="block text-caption font-medium text-foreground mb-1"
           >
-            Sandbox Select Dropdown
+            {t("selectLabel")}
           </label>
           <Select
             id="sandbox-select"
@@ -324,11 +336,9 @@ export function InteractiveFormSandbox() {
             aria-invalid={isInvalid ? "true" : "false"}
             aria-describedby={isInvalid ? "sandbox-select-err" : undefined}
           >
-            <option value="wh-hub-a">Logistics Hub Alpha (Domestic)</option>
-            <option value="wh-hub-b">Logistics Hub Bravo (Regional)</option>
-            <option value="wh-hub-c">
-              Logistics Hub Charlie (International)
-            </option>
+            <option value="wh-hub-a">{t("optionHubA")}</option>
+            <option value="wh-hub-b">{t("optionHubB")}</option>
+            <option value="wh-hub-c">{t("optionHubC")}</option>
           </Select>
           {isInvalid && (
             <p
@@ -336,7 +346,7 @@ export function InteractiveFormSandbox() {
               role="alert"
               className="mt-1 text-caption text-destructive"
             >
-              Selected fulfillment hub is currently at capacity.
+              {t("selectError")}
             </p>
           )}
         </div>

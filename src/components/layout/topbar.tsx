@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { logoutAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,9 @@ interface TopbarProps {
  * - Includes branding, breadcrumbs, user session status, and accessible logout Server Action.
  * - Uses `CurrentRouteLabel` as a minimal client leaf to dynamically reflect active route.
  */
-export function Topbar({ userEmail }: TopbarProps) {
+export async function Topbar({ userEmail }: TopbarProps) {
+  const t = await getTranslations("nav");
+
   return (
     <header className="fixed top-0 left-0 right-0 h-topbar z-30 border-b border-border bg-surface px-4 lg:px-6 flex items-center justify-between">
       {/* Left section: mobile menu toggle, brand, and breadcrumb */}
@@ -38,7 +41,7 @@ export function Topbar({ userEmail }: TopbarProps) {
 
         {/* Section separator and dynamic route indicator */}
         <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-border text-caption text-muted-foreground">
-          <span>Console</span>
+          <span>{t("console")}</span>
           <span aria-hidden="true">/</span>
           <CurrentRouteLabel />
         </div>
@@ -61,9 +64,9 @@ export function Topbar({ userEmail }: TopbarProps) {
             type="submit"
             variant="ghost"
             size="sm"
-            aria-label="Sign out of console"
+            aria-label={t("signOutAria")}
           >
-            Sign out
+            {t("signOut")}
           </Button>
         </form>
       </div>

@@ -18,13 +18,19 @@ import {
   InteractiveFormSandbox,
 } from "@/features/catalogue/components/component-examples";
 
-export const metadata: Metadata = {
-  title: "UI Component Catalogue — OrderHub Admin Console",
-  description:
-    "Design system primitives, variants, sizes, and accessible states verification catalogue.",
-};
+import { getTranslations } from "next-intl/server";
 
-export default function ComponentCataloguePage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("catalogue");
+  return {
+    title: `${t("title")} — OrderHub Admin Console`,
+    description: t("description"),
+  };
+}
+
+export default async function ComponentCataloguePage() {
+  const t = await getTranslations("catalogue");
+
   return (
     <main className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-12">
       <div className="w-full max-w-container-max mx-auto space-y-12">
@@ -37,35 +43,32 @@ export default function ComponentCataloguePage() {
                   className="inline-block h-2 w-2 rounded-full bg-primary"
                   aria-hidden="true"
                 />
-                <span>Session 06 / D8.3 Baseline</span>
+                <span>{t("baselineBadge")}</span>
               </Badge>
               <span className="text-caption text-muted-foreground font-mono">
-                OrderHub Design System v1.0.0
+                {t("version")}
               </span>
             </div>
 
             <nav
-              aria-label="Breadcrumb navigation"
+              aria-label={t("breadcrumbAria")}
               className="flex items-center gap-4 text-caption"
             >
               <Link
                 href="/login"
                 className="text-primary hover:text-primary-hover font-medium underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-sm"
               >
-                &larr; Back to Login Screen
+                {t("backToLogin")}
               </Link>
             </nav>
           </div>
 
           <div>
             <h1 className="text-page-title font-semibold tracking-tight text-foreground">
-              UI Component Catalogue
+              {t("title")}
             </h1>
             <p className="mt-2 text-body text-muted-foreground max-w-3xl">
-              Comprehensive reference and verification matrix for OrderHub B2B
-              Admin Console base primitives. Demonstrates all six typed CVA
-              components, variants, sizing scales, interactive states, and
-              accessible keyboard behaviors defined in{" "}
+              {t("description")}{" "}
               <code className="text-caption font-mono bg-muted px-2 py-1 rounded text-foreground">
                 docs/design-system.md
               </code>
@@ -84,15 +87,13 @@ export default function ComponentCataloguePage() {
               id="section-buttons-heading"
               className="text-section-title font-semibold text-foreground flex items-center gap-3"
             >
-              <span>1. Button Primitive</span>
+              <span>{t("buttons.sectionTitle")}</span>
               <code className="text-caption font-mono text-muted-foreground font-normal">
                 src/components/ui/button.tsx
               </code>
             </h2>
             <p className="mt-1 text-body text-muted-foreground">
-              Accessible action triggers with four semantic variants, three
-              standard control heights, pending loading states with animated
-              spinners, and disabled states.
+              {t("buttons.sectionDesc")}
             </p>
           </div>
 
@@ -100,17 +101,21 @@ export default function ComponentCataloguePage() {
             {/* Variants */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Semantic Variants</CardTitle>
-                <CardDescription>
-                  Primary, secondary, ghost, and destructive actions.
-                </CardDescription>
+                <CardTitle>{t("buttons.variantsTitle")}</CardTitle>
+                <CardDescription>{t("buttons.variantsDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <Button variant="primary">Primary</Button>
-                  <Button variant="secondary">Secondary</Button>
-                  <Button variant="ghost">Ghost</Button>
-                  <Button variant="destructive">Destructive</Button>
+                  <Button variant="primary">
+                    {t("buttons.variantPrimary")}
+                  </Button>
+                  <Button variant="secondary">
+                    {t("buttons.variantSecondary")}
+                  </Button>
+                  <Button variant="ghost">{t("buttons.variantGhost")}</Button>
+                  <Button variant="destructive">
+                    {t("buttons.variantDestructive")}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -118,22 +123,19 @@ export default function ComponentCataloguePage() {
             {/* Sizes */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Control Sizing Scale</CardTitle>
-                <CardDescription>
-                  Tokens: sm (h-control-sm: 32px), md (h-control-md: 40px), lg
-                  (h-control-lg: 44px).
-                </CardDescription>
+                <CardTitle>{t("buttons.sizesTitle")}</CardTitle>
+                <CardDescription>{t("buttons.sizesDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-wrap items-center gap-3">
                   <Button variant="primary" size="sm">
-                    Small (32px)
+                    {t("buttons.sizeSmall")}
                   </Button>
                   <Button variant="primary" size="md">
-                    Medium (40px)
+                    {t("buttons.sizeMedium")}
                   </Button>
                   <Button variant="primary" size="lg">
-                    Large (44px)
+                    {t("buttons.sizeLarge")}
                   </Button>
                 </div>
               </CardContent>
@@ -142,24 +144,22 @@ export default function ComponentCataloguePage() {
             {/* States: Disabled and Loading */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Disabled &amp; Static Loading States</CardTitle>
-                <CardDescription>
-                  Pointer events blocked, opacity-50 applied, aria-busy exposed.
-                </CardDescription>
+                <CardTitle>{t("buttons.statesTitle")}</CardTitle>
+                <CardDescription>{t("buttons.statesDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-wrap items-center gap-3">
                   <Button variant="primary" disabled>
-                    Disabled Primary
+                    {t("buttons.disabledPrimary")}
                   </Button>
                   <Button variant="secondary" disabled>
-                    Disabled Secondary
+                    {t("buttons.disabledSecondary")}
                   </Button>
                   <Button variant="primary" loading>
-                    Loading...
+                    {t("buttons.loading")}
                   </Button>
                   <Button variant="secondary" loading>
-                    Loading...
+                    {t("buttons.loading")}
                   </Button>
                 </div>
               </CardContent>
@@ -168,11 +168,8 @@ export default function ComponentCataloguePage() {
             {/* Interactive Sandbox */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Interactive State Sandbox</CardTitle>
-                <CardDescription>
-                  Client island exercising dynamic loading toggle and click
-                  handling.
-                </CardDescription>
+                <CardTitle>{t("buttons.sandboxTitle")}</CardTitle>
+                <CardDescription>{t("buttons.sandboxDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <InteractiveButtonSandbox />
@@ -191,15 +188,13 @@ export default function ComponentCataloguePage() {
               id="section-inputs-heading"
               className="text-section-title font-semibold text-foreground flex items-center gap-3"
             >
-              <span>2. Input Primitive</span>
+              <span>{t("inputs.sectionTitle")}</span>
               <code className="text-caption font-mono text-muted-foreground font-normal">
                 src/components/ui/input.tsx
               </code>
             </h2>
             <p className="mt-1 text-body text-muted-foreground">
-              Form text inputs with control-border contrast (&ge; 3.0:1),
-              persistent accessible labels, aria-invalid error resolution, and
-              typed sizing scale.
+              {t("inputs.sectionDesc")}
             </p>
           </div>
 
@@ -207,10 +202,8 @@ export default function ComponentCataloguePage() {
             {/* Sizes */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Input Sizes (sm / md / lg)</CardTitle>
-                <CardDescription>
-                  Standard control heights across density levels.
-                </CardDescription>
+                <CardTitle>{t("inputs.sizesTitle")}</CardTitle>
+                <CardDescription>{t("inputs.sizesDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0 space-y-4">
                 <div>
@@ -218,12 +211,12 @@ export default function ComponentCataloguePage() {
                     htmlFor="input-sm"
                     className="block text-caption font-medium mb-1"
                   >
-                    Small Input (h-control-sm)
+                    {t("inputs.sizeSmLabel")}
                   </label>
                   <Input
                     id="input-sm"
                     size="sm"
-                    placeholder="Search orders..."
+                    placeholder={t("inputs.sizeSmPlaceholder")}
                   />
                 </div>
                 <div>
@@ -231,12 +224,12 @@ export default function ComponentCataloguePage() {
                     htmlFor="input-md"
                     className="block text-caption font-medium mb-1"
                   >
-                    Medium Input (h-control-md)
+                    {t("inputs.sizeMdLabel")}
                   </label>
                   <Input
                     id="input-md"
                     size="md"
-                    placeholder="Default height..."
+                    placeholder={t("inputs.sizeMdPlaceholder")}
                   />
                 </div>
                 <div>
@@ -244,12 +237,12 @@ export default function ComponentCataloguePage() {
                     htmlFor="input-lg"
                     className="block text-caption font-medium mb-1"
                   >
-                    Large Input (h-control-lg)
+                    {t("inputs.sizeLgLabel")}
                   </label>
                   <Input
                     id="input-lg"
                     size="lg"
-                    placeholder="Large prominent field..."
+                    placeholder={t("inputs.sizeLgPlaceholder")}
                   />
                 </div>
               </CardContent>
@@ -258,11 +251,8 @@ export default function ComponentCataloguePage() {
             {/* Error States */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Error &amp; Validation States</CardTitle>
-                <CardDescription>
-                  Resolved via variant=&quot;error&quot; or
-                  aria-invalid=&quot;true&quot;.
-                </CardDescription>
+                <CardTitle>{t("inputs.errorsTitle")}</CardTitle>
+                <CardDescription>{t("inputs.errorsDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0 space-y-4">
                 <div>
@@ -270,7 +260,7 @@ export default function ComponentCataloguePage() {
                     htmlFor="input-err-variant"
                     className="block text-caption font-medium mb-1"
                   >
-                    Direct Error Variant
+                    {t("inputs.errVariantLabel")}
                   </label>
                   <Input
                     id="input-err-variant"
@@ -283,7 +273,7 @@ export default function ComponentCataloguePage() {
                     role="alert"
                     className="mt-1 text-caption text-destructive"
                   >
-                    SKU must follow the pattern VATEK-XXXX-YYYY.
+                    {t("inputs.errVariantMsg")}
                   </p>
                 </div>
                 <div>
@@ -291,7 +281,7 @@ export default function ComponentCataloguePage() {
                     htmlFor="input-err-aria"
                     className="block text-caption font-medium mb-1"
                   >
-                    Inferred via aria-invalid=&quot;true&quot;
+                    {t("inputs.errAriaLabel")}
                   </label>
                   <Input
                     id="input-err-aria"
@@ -304,7 +294,7 @@ export default function ComponentCataloguePage() {
                     role="alert"
                     className="mt-1 text-caption text-destructive"
                   >
-                    Please provide a complete email domain.
+                    {t("inputs.errAriaMsg")}
                   </p>
                 </div>
               </CardContent>
@@ -313,10 +303,8 @@ export default function ComponentCataloguePage() {
             {/* Disabled & Value States */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Disabled &amp; Read-Only States</CardTitle>
-                <CardDescription>
-                  Opacity reduction and cursor-not-allowed.
-                </CardDescription>
+                <CardTitle>{t("inputs.disabledTitle")}</CardTitle>
+                <CardDescription>{t("inputs.disabledDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0 space-y-4">
                 <div>
@@ -324,12 +312,12 @@ export default function ComponentCataloguePage() {
                     htmlFor="input-disabled"
                     className="block text-caption font-medium mb-1"
                   >
-                    Disabled Empty Input
+                    {t("inputs.disabledEmptyLabel")}
                   </label>
                   <Input
                     id="input-disabled"
                     disabled
-                    placeholder="Read only / disabled"
+                    placeholder={t("inputs.disabledEmptyPlaceholder")}
                   />
                 </div>
                 <div>
@@ -337,7 +325,7 @@ export default function ComponentCataloguePage() {
                     htmlFor="input-disabled-val"
                     className="block text-caption font-medium mb-1"
                   >
-                    Disabled With Locked Value
+                    {t("inputs.disabledLockedLabel")}
                   </label>
                   <Input
                     id="input-disabled-val"
@@ -360,15 +348,13 @@ export default function ComponentCataloguePage() {
               id="section-selects-heading"
               className="text-section-title font-semibold text-foreground flex items-center gap-3"
             >
-              <span>3. Select Primitive</span>
+              <span>{t("selects.sectionTitle")}</span>
               <code className="text-caption font-mono text-muted-foreground font-normal">
                 src/components/ui/select.tsx
               </code>
             </h2>
             <p className="mt-1 text-body text-muted-foreground">
-              Accessible native dropdown select preserving operating system
-              keyboard navigation (Arrow keys, Space/Enter to activate, Escape
-              to close) with typed CVA styling.
+              {t("selects.sectionDesc")}
             </p>
           </div>
 
@@ -376,10 +362,8 @@ export default function ComponentCataloguePage() {
             {/* Sizes */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Dropdown Sizes</CardTitle>
-                <CardDescription>
-                  sm, md, and lg heights matching input scale.
-                </CardDescription>
+                <CardTitle>{t("selects.sizesTitle")}</CardTitle>
+                <CardDescription>{t("selects.sizesDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0 space-y-3">
                 <div>
@@ -387,12 +371,12 @@ export default function ComponentCataloguePage() {
                     htmlFor="select-sm"
                     className="block text-caption font-medium mb-1"
                   >
-                    Small Select (h-control-sm)
+                    {t("selects.sizeSmLabel")}
                   </label>
                   <Select id="select-sm" size="sm" defaultValue="10">
-                    <option value="10">Show 10 per page</option>
-                    <option value="25">Show 25 per page</option>
-                    <option value="50">Show 50 per page</option>
+                    <option value="10">{t("selects.option10")}</option>
+                    <option value="25">{t("selects.option25")}</option>
+                    <option value="50">{t("selects.option50")}</option>
                   </Select>
                 </div>
                 <div>
@@ -400,13 +384,19 @@ export default function ComponentCataloguePage() {
                     htmlFor="select-md"
                     className="block text-caption font-medium mb-1"
                   >
-                    Medium Select (h-control-md)
+                    {t("selects.sizeMdLabel")}
                   </label>
                   <Select id="select-md" size="md" defaultValue="all">
-                    <option value="all">All Order Statuses</option>
-                    <option value="pending">Pending Approval</option>
-                    <option value="fulfilled">Fulfilled</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="all">{t("selects.optionAll")}</option>
+                    <option value="pending">
+                      {t("selects.optionPending")}
+                    </option>
+                    <option value="fulfilled">
+                      {t("selects.optionFulfilled")}
+                    </option>
+                    <option value="cancelled">
+                      {t("selects.optionCancelled")}
+                    </option>
                   </Select>
                 </div>
                 <div>
@@ -414,12 +404,12 @@ export default function ComponentCataloguePage() {
                     htmlFor="select-lg"
                     className="block text-caption font-medium mb-1"
                   >
-                    Large Select (h-control-lg)
+                    {t("selects.sizeLgLabel")}
                   </label>
                   <Select id="select-lg" size="lg" defaultValue="us-east">
-                    <option value="us-east">US East Fulfillment Region</option>
-                    <option value="eu-west">EU West Fulfillment Region</option>
-                    <option value="apac-sg">APAC Singapore Hub</option>
+                    <option value="us-east">{t("selects.optionUsEast")}</option>
+                    <option value="eu-west">{t("selects.optionEuWest")}</option>
+                    <option value="apac-sg">{t("selects.optionApacSg")}</option>
                   </Select>
                 </div>
               </CardContent>
@@ -428,10 +418,8 @@ export default function ComponentCataloguePage() {
             {/* Error State */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Error &amp; Invalid State</CardTitle>
-                <CardDescription>
-                  aria-invalid=&quot;true&quot; activates border-destructive.
-                </CardDescription>
+                <CardTitle>{t("selects.errorTitle")}</CardTitle>
+                <CardDescription>{t("selects.errorDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0 space-y-4">
                 <div>
@@ -439,7 +427,7 @@ export default function ComponentCataloguePage() {
                     htmlFor="select-error"
                     className="block text-caption font-medium mb-1"
                   >
-                    Fulfillment Facility Assignment
+                    {t("selects.errorLabel")}
                   </label>
                   <Select
                     id="select-error"
@@ -448,17 +436,17 @@ export default function ComponentCataloguePage() {
                     defaultValue="unassigned"
                   >
                     <option value="unassigned">
-                      -- Select Target Facility --
+                      {t("selects.optionPlaceholder")}
                     </option>
-                    <option value="wh-a">Warehouse Facility Alpha</option>
-                    <option value="wh-b">Warehouse Facility Bravo</option>
+                    <option value="wh-a">{t("selects.optionWhA")}</option>
+                    <option value="wh-b">{t("selects.optionWhB")}</option>
                   </Select>
                   <p
                     id="select-error-msg"
                     role="alert"
                     className="mt-1 text-caption text-destructive"
                   >
-                    Please designate an operational warehouse for fulfillment.
+                    {t("selects.errorMsg")}
                   </p>
                 </div>
               </CardContent>
@@ -467,10 +455,8 @@ export default function ComponentCataloguePage() {
             {/* Disabled State */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Disabled Dropdown</CardTitle>
-                <CardDescription>
-                  Native select disabled with muted styling.
-                </CardDescription>
+                <CardTitle>{t("selects.disabledTitle")}</CardTitle>
+                <CardDescription>{t("selects.disabledDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0 space-y-4">
                 <div>
@@ -478,13 +464,11 @@ export default function ComponentCataloguePage() {
                     htmlFor="select-disabled"
                     className="block text-caption font-medium mb-1"
                   >
-                    Locked Currency Region
+                    {t("selects.disabledLabel")}
                   </label>
                   <Select id="select-disabled" disabled defaultValue="usd">
-                    <option value="usd">
-                      USD ($) &bull; United States Dollar
-                    </option>
-                    <option value="eur">EUR (&euro;) &bull; Euro</option>
+                    <option value="usd">{t("selects.optionUsd")}</option>
+                    <option value="eur">{t("selects.optionEur")}</option>
                   </Select>
                 </div>
               </CardContent>
@@ -494,7 +478,7 @@ export default function ComponentCataloguePage() {
           {/* Interactive Form Sandbox */}
           <div>
             <h3 className="text-section-title font-semibold text-foreground mb-3">
-              Interactive Input &amp; Select Live Form Sandbox
+              {t("selects.sandboxHeading")}
             </h3>
             <InteractiveFormSandbox />
           </div>
@@ -510,15 +494,13 @@ export default function ComponentCataloguePage() {
               id="section-badges-heading"
               className="text-section-title font-semibold text-foreground flex items-center gap-3"
             >
-              <span>4. Badge Primitive</span>
+              <span>{t("badges.sectionTitle")}</span>
               <code className="text-caption font-mono text-muted-foreground font-normal">
                 src/components/ui/badge.tsx
               </code>
             </h2>
             <p className="mt-1 text-body text-muted-foreground">
-              Compact status chips communicating state via paired semantic color
-              contrast (&ge; 6.3:1 WCAG AA) and textual labels. Never relies on
-              color alone.
+              {t("badges.sectionDesc")}
             </p>
           </div>
 
@@ -526,10 +508,8 @@ export default function ComponentCataloguePage() {
             {/* Semantic Variants */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Status Variants</CardTitle>
-                <CardDescription>
-                  Neutral, success, warning, and destructive status treatments.
-                </CardDescription>
+                <CardTitle>{t("badges.variantsTitle")}</CardTitle>
+                <CardDescription>{t("badges.variantsDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-wrap items-center gap-3">
@@ -538,28 +518,28 @@ export default function ComponentCataloguePage() {
                       className="inline-block h-2 w-2 rounded-full bg-muted-foreground"
                       aria-hidden="true"
                     />
-                    <span>Neutral (Draft)</span>
+                    <span>{t("badges.neutralDraft")}</span>
                   </Badge>
                   <Badge variant="success">
                     <span
                       className="inline-block h-2 w-2 rounded-full bg-success"
                       aria-hidden="true"
                     />
-                    <span>Success (Delivered)</span>
+                    <span>{t("badges.successDelivered")}</span>
                   </Badge>
                   <Badge variant="warning">
                     <span
                       className="inline-block h-2 w-2 rounded-full bg-warning"
                       aria-hidden="true"
                     />
-                    <span>Warning (Pending)</span>
+                    <span>{t("badges.warningPending")}</span>
                   </Badge>
                   <Badge variant="destructive">
                     <span
                       className="inline-block h-2 w-2 rounded-full bg-destructive"
                       aria-hidden="true"
                     />
-                    <span>Destructive (Cancelled)</span>
+                    <span>{t("badges.destructiveCancelled")}</span>
                   </Badge>
                 </div>
               </CardContent>
@@ -568,22 +548,19 @@ export default function ComponentCataloguePage() {
             {/* Sizing Scale */}
             <Card variant="default" size="md" className="space-y-4">
               <CardHeader className="p-0">
-                <CardTitle>Badge Sizes (sm / md / lg)</CardTitle>
-                <CardDescription>
-                  Strict 4px grid paddings: px-2 py-1 (sm), px-3 py-1 (md), px-4
-                  py-2 (lg).
-                </CardDescription>
+                <CardTitle>{t("badges.sizesTitle")}</CardTitle>
+                <CardDescription>{t("badges.sizesDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-wrap items-center gap-3">
                   <Badge variant="neutral" size="sm">
-                    Small (sm)
+                    {t("badges.sizeSm")}
                   </Badge>
                   <Badge variant="neutral" size="md">
-                    Medium (md)
+                    {t("badges.sizeMd")}
                   </Badge>
                   <Badge variant="neutral" size="lg">
-                    Large (lg)
+                    {t("badges.sizeLg")}
                   </Badge>
                 </div>
               </CardContent>
@@ -601,15 +578,13 @@ export default function ComponentCataloguePage() {
               id="section-cards-heading"
               className="text-section-title font-semibold text-foreground flex items-center gap-3"
             >
-              <span>5. Card Primitive</span>
+              <span>{t("cards.sectionTitle")}</span>
               <code className="text-caption font-mono text-muted-foreground font-normal">
                 src/components/ui/card.tsx
               </code>
             </h2>
             <p className="mt-1 text-body text-muted-foreground">
-              Structural content containers supporting compound slots:
-              CardHeader, CardTitle, CardDescription, CardContent, and
-              CardFooter.
+              {t("cards.sectionDesc")}
             </p>
           </div>
 
@@ -617,23 +592,20 @@ export default function ComponentCataloguePage() {
             {/* Card Variant: Default */}
             <Card variant="default" size="md">
               <CardHeader>
-                <CardTitle>Default Surface Card</CardTitle>
-                <CardDescription>
-                  variant=&quot;default&quot; (size=&quot;md&quot;)
-                </CardDescription>
+                <CardTitle>{t("cards.defaultTitle")}</CardTitle>
+                <CardDescription>{t("cards.defaultDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-caption text-muted-foreground">
-                  Elevated white surface (`bg-surface`) bounded by subtle border
-                  (`border-border`) and standard shadow (`shadow-sm`).
+                  {t("cards.defaultContent")}
                 </p>
               </CardContent>
               <CardFooter className="justify-between">
                 <Badge variant="success" size="sm">
-                  Active
+                  {t("cards.activeBadge")}
                 </Badge>
                 <Button variant="ghost" size="sm">
-                  Action
+                  {t("cards.actionBtn")}
                 </Button>
               </CardFooter>
             </Card>
@@ -641,23 +613,20 @@ export default function ComponentCataloguePage() {
             {/* Card Variant: Muted */}
             <Card variant="muted" size="md">
               <CardHeader>
-                <CardTitle>Muted Surface Card</CardTitle>
-                <CardDescription>
-                  variant=&quot;muted&quot; (size=&quot;md&quot;)
-                </CardDescription>
+                <CardTitle>{t("cards.mutedTitle")}</CardTitle>
+                <CardDescription>{t("cards.mutedDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-caption text-muted-foreground">
-                  Subdued neutral slate surface (`bg-muted`) designed for side
-                  panels, informational callouts, and grouped summary blocks.
+                  {t("cards.mutedContent")}
                 </p>
               </CardContent>
               <CardFooter className="justify-between">
                 <Badge variant="neutral" size="sm">
-                  Secondary
+                  {t("cards.secondaryBadge")}
                 </Badge>
                 <Button variant="secondary" size="sm">
-                  Review
+                  {t("cards.reviewBtn")}
                 </Button>
               </CardFooter>
             </Card>
@@ -665,23 +634,20 @@ export default function ComponentCataloguePage() {
             {/* Card Variant: Outline */}
             <Card variant="outline" size="md">
               <CardHeader>
-                <CardTitle>Outline Card</CardTitle>
-                <CardDescription>
-                  variant=&quot;outline&quot; (size=&quot;md&quot;)
-                </CardDescription>
+                <CardTitle>{t("cards.outlineTitle")}</CardTitle>
+                <CardDescription>{t("cards.outlineDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-caption text-muted-foreground">
-                  Transparent canvas (`bg-transparent`) bounded solely by subtle
-                  border (`border-border`) without drop shadow.
+                  {t("cards.outlineContent")}
                 </p>
               </CardContent>
               <CardFooter className="justify-between">
                 <Badge variant="warning" size="sm">
-                  Caution
+                  {t("cards.cautionBadge")}
                 </Badge>
                 <Button variant="ghost" size="sm">
-                  Configure
+                  {t("cards.configureBtn")}
                 </Button>
               </CardFooter>
             </Card>
@@ -690,21 +656,27 @@ export default function ComponentCataloguePage() {
           {/* Sizing Scale Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card variant="default" size="sm">
-              <p className="text-caption font-semibold">Card Size sm (p-4)</p>
+              <p className="text-caption font-semibold">
+                {t("cards.scaleSmTitle")}
+              </p>
               <p className="text-caption text-muted-foreground mt-1">
-                Compact 16px internal padding.
+                {t("cards.scaleSmDesc")}
               </p>
             </Card>
             <Card variant="default" size="md">
-              <p className="text-caption font-semibold">Card Size md (p-6)</p>
+              <p className="text-caption font-semibold">
+                {t("cards.scaleMdTitle")}
+              </p>
               <p className="text-caption text-muted-foreground mt-1">
-                Standard 24px internal padding.
+                {t("cards.scaleMdDesc")}
               </p>
             </Card>
             <Card variant="default" size="lg">
-              <p className="text-caption font-semibold">Card Size lg (p-8)</p>
+              <p className="text-caption font-semibold">
+                {t("cards.scaleLgTitle")}
+              </p>
               <p className="text-caption text-muted-foreground mt-1">
-                Spacious 32px internal padding.
+                {t("cards.scaleLgDesc")}
               </p>
             </Card>
           </div>
@@ -720,27 +692,20 @@ export default function ComponentCataloguePage() {
               id="section-modals-heading"
               className="text-section-title font-semibold text-foreground flex items-center gap-3"
             >
-              <span>6. Modal Primitive</span>
+              <span>{t("modals.sectionTitle")}</span>
               <code className="text-caption font-mono text-muted-foreground font-normal">
                 src/components/ui/modal.tsx
               </code>
             </h2>
             <p className="mt-1 text-body text-muted-foreground">
-              Accessible dialog powered by Radix Dialog. Enforces compile-time
-              accessible title and description props, traps keyboard focus
-              within the dialog, dismisses on Escape key or backdrop click, and
-              restores focus to the invoking trigger button upon close.
+              {t("modals.sectionDesc")}
             </p>
           </div>
 
           <Card variant="default" size="md" className="space-y-6">
             <CardHeader className="p-0">
-              <CardTitle>Interactive Modal Verification Sandbox</CardTitle>
-              <CardDescription>
-                Demonstrates four dialog configurations exercising variants
-                (`default`, `destructive`, `muted`) and sizes (`sm`, `md`, `lg`,
-                `xl`).
-              </CardDescription>
+              <CardTitle>{t("modals.sandboxTitle")}</CardTitle>
+              <CardDescription>{t("modals.sandboxDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <ModalExamples />
@@ -750,10 +715,7 @@ export default function ComponentCataloguePage() {
 
         {/* Footer */}
         <footer className="border-t border-border pt-6 text-center text-caption text-muted-foreground">
-          <p>
-            OrderHub Admin Console &bull; Session 06 / Step-7 Delivery &bull;
-            Capstone Frontend Intern
-          </p>
+          <p>{t("footer.text")}</p>
         </footer>
       </div>
     </main>

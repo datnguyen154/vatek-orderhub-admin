@@ -18,9 +18,12 @@
     "clsx": "2.1.1",
     "msw": "2.7.3",
     "next": "15.5.29",
+    "next-intl": "3.26.5",
+    "next-themes": "0.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "tailwind-merge": "2.6.0"
+    "tailwind-merge": "2.6.0",
+    "zustand": "5.0.3"
   },
   "devDependencies": {
     "@types/node": "22.13.10",

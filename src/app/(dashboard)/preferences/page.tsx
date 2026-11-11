@@ -1,26 +1,27 @@
 import type { Metadata } from "next";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
+import { PreferencesForm } from "@/features/preferences/components/preferences-form";
 
-export const metadata: Metadata = {
-  title: "Preferences — OrderHub Admin Console",
-  description: "Console configuration and operational preferences",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("preferences");
+  return {
+    title: `${t("title")} — OrderHub Admin Console`,
+    description: t("description"),
+  };
+}
 
 /**
- * Preferences Workspace Page — Server Component Placeholder
+ * Preferences Workspace Page — Server Component
  *
- * Implemented as a Server Component placeholder to verify persistent shell navigation.
- * States plainly that preferences are planned for Week 3.
- * Does not imply persistence or add settings behavior.
+ * Implements the authenticated Preferences workspace:
+ * - Server Component preserving SEO metadata and authenticated dashboard shell.
+ * - Renders localized page header and accessible interactive PreferencesForm client island.
+ * - Manages default Orders filters, light/dark/system theme, and English/Vietnamese language selection.
  */
-export default function PreferencesPage() {
+export default async function PreferencesPage() {
+  const t = await getTranslations("preferences");
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -28,35 +29,20 @@ export default function PreferencesPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="neutral" size="sm">
-              Settings
+              {t("badge")}
             </Badge>
           </div>
           <h1 className="text-page-title font-semibold text-foreground tracking-tight">
-            Preferences
+            {t("title")}
           </h1>
           <p className="mt-1 text-body text-muted-foreground">
-            Console configuration and operational preferences.
+            {t("description")}
           </p>
         </div>
       </header>
 
-      {/* Preferences Placeholder Card */}
-      <Card variant="default" size="md">
-        <CardHeader>
-          <CardTitle>Preferences Overview</CardTitle>
-          <CardDescription>
-            Configure console workspace preferences, notification settings, and
-            default operational filters.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-body text-muted-foreground">
-            Preferences management and persistent configuration settings are
-            planned for Week 3. No preferences are active or persisted at this
-            time.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Interactive Preferences Form */}
+      <PreferencesForm />
     </div>
   );
 }

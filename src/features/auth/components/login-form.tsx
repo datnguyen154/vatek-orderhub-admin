@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,8 @@ import {
 import { loginAction, type LoginActionResult } from "../actions";
 
 export function LoginForm() {
+  const t = useTranslations("auth");
+
   const [state, formAction, isPending] = useActionState<
     LoginActionResult,
     FormData
@@ -91,7 +94,7 @@ export function LoginForm() {
             />
             <div className="space-y-1">
               <p className="text-body-medium font-semibold text-destructive">
-                Authentication Notice
+                {t("authNotice")}
               </p>
               <p className="text-caption text-destructive-muted-foreground">
                 {state.serverError}
@@ -107,7 +110,7 @@ export function LoginForm() {
           htmlFor="login-email"
           className="block text-body-medium font-medium text-foreground mb-2"
         >
-          Email address
+          {t("emailLabel")}
         </label>
         <Input
           ref={emailInputRef}
@@ -120,7 +123,7 @@ export function LoginForm() {
           disabled={isPending}
           aria-invalid={errors.email ? "true" : "false"}
           aria-describedby={errors.email ? "login-email-error" : undefined}
-          placeholder="name@company.com"
+          placeholder={t("emailPlaceholder")}
         />
         {errors.email && (
           <p
@@ -139,7 +142,7 @@ export function LoginForm() {
           htmlFor="login-password"
           className="block text-body-medium font-medium text-foreground mb-2"
         >
-          Password
+          {t("passwordLabel")}
         </label>
         <Input
           ref={passwordInputRef}
@@ -154,7 +157,7 @@ export function LoginForm() {
           aria-describedby={
             errors.password ? "login-password-error" : undefined
           }
-          placeholder="••••••••"
+          placeholder={t("passwordPlaceholder")}
         />
         {errors.password && (
           <p
@@ -177,18 +180,17 @@ export function LoginForm() {
           loading={isPending}
           className="w-full"
         >
-          {isPending ? "Signing in..." : "Sign in to Console"}
+          {isPending ? t("submittingButton") : t("submitButton")}
         </Button>
       </div>
 
       {/* Demo guidance reference block with base Card primitive */}
       <Card variant="muted" size="sm" className="text-center">
         <p className="text-caption font-medium text-foreground">
-          Demo Mode Session
+          {t("demoSessionTitle")}
         </p>
         <p className="mt-1 text-caption text-muted-foreground">
-          Enter any valid email and 8+ character password to establish a signed
-          demo session.
+          {t("demoSessionDesc")}
         </p>
       </Card>
     </form>
