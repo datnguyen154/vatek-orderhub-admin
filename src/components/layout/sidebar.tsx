@@ -4,6 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import {
+  ALL_PERMISSIONS,
+  hasPermission,
+  type Permission,
+  type Role,
+} from "@/features/auth/types";
+
+interface SidebarProps {
+  role: Role;
+}
 
 /**
  * Desktop Persistent Sidebar Navigation
@@ -14,15 +24,25 @@ import { cn } from "@/lib/utils";
  * - Hidden on mobile/tablet viewports (< lg), where `MobileNav` provides navigation.
  * - Enforces semantic `<aside>` and `<nav>` structure with explicit accessibility labels.
  * - Sets `aria-current="page"` and active tokens exclusively on the currently matching route.
+ * - Filters navigation items by granted permissions.
+ * - NOTE: Hiding UI is not authorization; later mutations must get 403 from MSW for disallowed roles.
+ * - Displays "Your access" permission matrix status in clear text.
  */
-export function Sidebar() {
+export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("nav");
+  const tAccess = useTranslations("access");
 
-  const navigationItems = [
+  const navigationItems: Array<{
+    name: string;
+    href: string;
+    permission: Permission;
+    icon: React.ReactNode;
+  }> = [
     {
       name: t("orders"),
       href: "/orders",
+      permission: "orders:view",
       icon: (
         <svg
           className="h-4 w-4 shrink-0"
@@ -43,6 +63,7 @@ export function Sidebar() {
     {
       name: t("preferences"),
       href: "/preferences",
+      permission: "preferences:manage",
       icon: (
         <svg
           className="h-4 w-4 shrink-0"
@@ -67,13 +88,17 @@ export function Sidebar() {
     },
   ];
 
+  const visibleNavItems = navigationItems.filter((item) =>
+    hasPermission(role, item.permission)
+  );
+
   return (
     <aside
       aria-label={t("sidebarAria")}
-      className="hidden lg:flex fixed left-0 top-topbar bottom-0 w-sidebar z-20 flex-col border-r border-border bg-surface py-4 px-3"
+      className="hidden lg:flex fixed left-0 top-topbar bottom-0 w-sidebar z-20 flex-col border-r border-border bg-surface py-4 px-3 overflow-y-auto"
     >
       <nav aria-label={t("mainNavAria")} className="flex-1 space-y-1">
-        {navigationItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive =
             pathname === item.href || pathname?.startsWith(`${item.href}/`);
 
@@ -96,8 +121,45 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer status / environment indicator */}
+      {/* Your access list showing role-based permissions */}
       <div className="border-t border-border pt-4 px-2">
+        <p
+          id="access-heading"
+          className="text-caption font-semibold text-foreground uppercase tracking-wider mb-2"
+        >
+          {tAccess("title")}
+        </p>
+        <ul
+          aria-labelledby="access-heading"
+          className="space-y-1 text-caption"
+          role="list"
+        >
+          {ALL_PERMISSIONS.map((perm) => {
+            const granted = hasPermission(role, perm);
+            return (
+              <li
+                key={perm}
+                className="flex items-center justify-between gap-2 text-caption"
+              >
+                <span className="text-muted-foreground break-words">
+                  {tAccess(`permissions.${perm}`)}
+                </span>
+                <span
+                  className={cn(
+                    "font-medium shrink-0",
+                    granted ? "text-success" : "text-muted-foreground"
+                  )}
+                >
+                  {granted ? tAccess("granted") : tAccess("notGranted")}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      {/* Footer status / environment indicator */}
+      <div className="border-t border-border pt-4 px-2 mt-4">
         <div className="flex items-center gap-2 text-caption text-muted-foreground">
           <span
             className="inline-block h-2 w-2 rounded-full bg-success"

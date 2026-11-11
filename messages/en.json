@@ -6,12 +6,12 @@
     "pillars": {
       "fulfillmentTitle": "Real-time Fulfillment:",
       "fulfillmentDesc": "Track orders seamlessly from pending to fulfilled across all channels.",
-      "accessTitle": "Access Control (Planned):",
-      "accessDesc": "Role-based authorization is not yet implemented; this view serves purely as an unauthenticated UI preview.",
+      "accessTitle": "Role-Based Access Control:",
+      "accessDesc": "Demo roles (Admin, Staff, Viewer) govern permissions, navigation, and API access boundaries.",
       "uiTitle": "High-Density UI:",
       "uiDesc": "Accessible, keyboard-navigable primitives optimized for daily administrative tasks."
     },
-    "statusIndicator": "Session 06 UI Integration • Authentication backend not connected",
+    "statusIndicator": "OrderHub Demo Auth • Signed session cookies with in-memory token refresh",
     "formTitle": "Sign in to your account",
     "formDescription": "Enter any demo credentials to test client-side validation.",
     "formFooter": "Demo environment for capstone evaluation. No credentials are stored.",
@@ -22,8 +22,30 @@
     "submitButton": "Sign in to Console",
     "submittingButton": "Signing in...",
     "authNotice": "Authentication Notice",
+    "serverError": "Authentication service is currently unavailable. Please try again later.",
+    "sessionExpiredTitle": "Session Expired",
+    "sessionExpiredDesc": "Your session has expired. Please sign in again to continue.",
     "demoSessionTitle": "Demo Mode Session",
-    "demoSessionDesc": "Enter any valid email and 8+ character password to establish a signed demo session."
+    "demoSessionDesc": "Sign in with admin@orderhub.test (Admin), staff@orderhub.test (Staff), or viewer@orderhub.test (Viewer). Use any password of 8+ characters."
+  },
+  "roles": {
+    "admin": "Admin",
+    "staff": "Staff",
+    "viewer": "Viewer"
+  },
+  "access": {
+    "title": "Your access",
+    "granted": "Granted",
+    "notGranted": "Not granted",
+    "permissions": {
+      "orders:view": "View orders",
+      "preferences:manage": "Manage preferences",
+      "orders:create": "Create orders",
+      "orders:updateStatus": "Update order status",
+      "orders:uploadInvoice": "Upload invoice",
+      "reports:view": "View reports",
+      "reports:export": "Export reports"
+    }
   },
   "nav": {
     "orders": "Orders",

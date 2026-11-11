@@ -9,7 +9,10 @@ import {
 import {
   setDemoSessionCookie,
   clearDemoSessionCookie,
+  getDemoSessionFromCookies,
 } from "@/lib/auth/demo-session";
+import { resolveRoleByEmail } from "@/mocks/data/auth";
+import type { RefreshTokenResult } from "./types";
 
 export interface LoginActionResult {
   success?: boolean;
@@ -20,7 +23,8 @@ export interface LoginActionResult {
 /**
  * Server Action for user login.
  * Performs runtime FormData extraction and validation without persisting credentials.
- * Upon successful validation, issues a signed demo session cookie and redirects to `/orders`.
+ * Resolves role from fixtures and issues a signed demo session cookie containing the role.
+ * Upon successful validation, redirects to `/orders`.
  */
 export async function loginAction(
   _prevState: LoginActionResult | null,
@@ -45,14 +49,17 @@ export async function loginAction(
 
   // Demo credential validation: accepts valid email & 8+ character password
   // Password is immediately dropped from memory; never logged, persisted, or stored.
+  // Role is resolved from demo email fixtures:
+  // admin@orderhub.test -> admin, staff@orderhub.test -> staff, viewer@orderhub.test -> viewer, other -> viewer
+  const role = resolveRoleByEmail(values.email);
+
   try {
-    await setDemoSessionCookie(values.email.trim());
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Authentication service error";
+    await setDemoSessionCookie(values.email.trim(), role);
+  } catch {
+    // Return localized message key instead of raw error to avoid leaking secrets
     return {
       success: false,
-      serverError: message,
+      serverError: "serverError",
     };
   }
 
@@ -62,9 +69,33 @@ export async function loginAction(
 
 /**
  * Server Action for user logout.
- * Clears the HTTP-only demo session cookie and redirects to `/login`.
+ * Clears the HTTP-only demo session cookie.
  */
 export async function logoutAction(): Promise<void> {
   await clearDemoSessionCookie();
-  redirect("/login");
+}
+
+/**
+ * Server Action for demo access token refresh.
+ * Verifies the HTTP-only session cookie. If valid, mints an in-memory demo access token
+ * with TTL 5 minutes formatted as `demo.<role>.<expiresAtMs>.<random>`.
+ * Returns `{ ok: true, accessToken, expiresAt }` or `{ ok: false }`.
+ */
+export async function refreshAccessTokenAction(): Promise<RefreshTokenResult> {
+  const session = await getDemoSessionFromCookies();
+  if (!session) {
+    return { ok: false };
+  }
+
+  const now = Date.now();
+  const ttlMs = 5 * 60 * 1000; // 5 minutes
+  const expiresAt = now + ttlMs;
+  const random = Math.random().toString(36).substring(2, 10);
+  const accessToken = `demo.${session.role}.${expiresAt}.${random}`;
+
+  return {
+    ok: true,
+    accessToken,
+    expiresAt,
+  };
 }

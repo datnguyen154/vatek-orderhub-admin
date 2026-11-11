@@ -97,7 +97,7 @@ export function LoginForm() {
                 {t("authNotice")}
               </p>
               <p className="text-caption text-destructive-muted-foreground">
-                {state.serverError}
+                {t("serverError")}
               </p>
             </div>
           </div>

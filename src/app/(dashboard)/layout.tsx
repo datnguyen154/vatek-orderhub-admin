@@ -40,10 +40,10 @@ export default async function DashboardLayout({
       </a>
 
       {/* Persistent top navigation bar */}
-      <Topbar userEmail={session.email} />
+      <Topbar userEmail={session.email} role={session.role} />
 
       {/* Persistent desktop sidebar navigation */}
-      <Sidebar />
+      <Sidebar role={session.role} />
 
       {/* Main content landmark */}
       <main
