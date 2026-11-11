@@ -1707,7 +1707,7 @@ Codex revised `step-14.scope_files` to explicitly add `src/features/catalogue/co
    - _Correction_: Converted in-browser DOM lookups to standard JavaScript DOM methods (`Array.from(document.querySelectorAll('button')).find(el => el.textContent.includes(...))`).
 3. **Session state on local verification server restart**:
    - _Mistake_: Restarting the verification server cleared in-memory session cookies, causing direct requests to `/preferences` to redirect to `/login`.
-   - _Correction_: Established a synthetic test session through `/login`, then selected Vietnamese through Preferences before testing `/preferences`.
+  
 
 ### 4. Verification Results
 
