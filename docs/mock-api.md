@@ -273,3 +273,71 @@ When `NEXT_PUBLIC_API_MOCKING=disabled`:
   - Encapsulates URL synchronization, debounced search, status dropdown, date range controls, and pagination.
   - Uses TanStack Query `useQuery` for cached order fetching with stable query keys.
   - Awaits `MockProvider` readiness before initiating data fetch to ensure zero unintercepted requests.
+
+---
+
+## 9. Auth (demo) Architecture & Contract
+
+OrderHub Admin Console implements an approved two-layer demo authentication architecture for capstone evaluation (Session 13 / step-15 / D12):
+
+### 9.1. Two-Layer Architecture
+
+1. **Layer A — Server-Side Session Cookie (`orderhub_demo_session`)**:
+   - **Type**: HTTP-only, SameSite=Lax signed cookie.
+   - **Payload**: `{ email: string, role: Role, createdAt: number, expiresAt: number }`.
+   - **Cryptographic Security**: Signed using HMAC-SHA256 with `DEMO_SESSION_SECRET` (minimum 32 characters, constant-time comparison). Fails closed if secret is missing or insufficient.
+   - **Route Guard Authority**: Middleware verifies presence (`/orders/*`, `/preferences/*`); Server Component dashboard layout cryptographically verifies validity and verified role. Invalid or missing cookies immediately redirect to `/login`.
+2. **Layer B — Demo Access Token (Client In-Memory API Token)**:
+   - **Token Format**: `demo.<role>.<expiresAtMs>.<random>` (e.g. `demo.admin.1731304500000.a1b2c3d4`).
+   - **Token Lifespan (TTL)**: 5 minutes (300,000 ms).
+   - **Storage Policy**: Kept **strictly in memory** as a JavaScript module variable in `src/features/auth/token-store.ts`. It is **never** persisted to `localStorage`, `sessionStorage`, cookies, or Zustand state.
+   - **Minting Mechanism**: Server Action `refreshAccessTokenAction()` in `src/features/auth/actions.ts`. Validates the HTTP-only session cookie server-side; if valid, mints and returns `{ ok: true, accessToken, expiresAt }`, otherwise `{ ok: false }`.
+
+### 9.2. Sequence: Token Acquisition, 401 Refresh, Retry, and Sign-Out
+
+The shared `apiClient` (`src/lib/api/client.ts`) handles request authentication and token lifecycle for same-origin `/api/` endpoints:
+
+1. **Initial Acquisition**: If no in-memory token exists, `apiClient` silently acquires one via `refreshAccessToken()` before dispatching the request. If acquisition fails (`{ ok: false }`), the client immediately calls `signOut("session_expired")`.
+2. **Bearer Attachment**: Requests include `Authorization: Bearer <token>`.
+3. **On 401 Unauthorized**:
+   - Exactly **one** silent token refresh attempt is performed via `refreshAccessToken()`. A shared in-flight promise ensures that concurrent requests trigger only a single refresh operation.
+   - Once refreshed, the original request is retried **once** with the new token.
+4. **Sign-Out Termination (No Infinite Loops)**:
+   - If the refresh attempt fails (`{ ok: false }`), or if the retried request returns `401` again, client execution immediately aborts and triggers `signOut("session_expired")`.
+   - `signOut()` clears the in-memory token, calls the server action to remove the HTTP-only cookie, and executes `window.location.replace("/login?reason=session_expired")`. This hard navigation flushes the TanStack Query in-memory cache and prevents any retry loop.
+5. **Abort Signal Safety**: Any aborted request (`AbortSignal`) never triggers a refresh attempt or sign-out redirect.
+
+### 9.3. MSW Auth Scenarios (`src/mocks/handlers.ts`)
+
+MSW intercepts `GET /api/orders` and requires a valid `Bearer demo.*` token with a future expiry timestamp. It resolves auth testing scenarios via query parameter `?auth=`, request header `x-mock-auth`, or `localStorage.orderhub_mock_auth`:
+
+| Auth Scenario       | Trigger / Activation                                           | Behavior                                                                                                             | Purpose                                                                                            |
+| ------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `expire-once`       | `?auth=expire-once` or `orderhub_mock_auth="expire-once"`      | Rejects the first token seen while active with `401 { code: "token_expired" }`; accepts subsequent refreshed tokens. | Proves silent 1 refresh + 1 retry sequence recovers seamlessly to render order data.               |
+| `always-401`        | `?auth=always-401` or `orderhub_mock_auth="always-401"`        | Rejects all tokens unconditionally with `401 { code: "token_expired" }`.                                             | Proves 1 refresh + 1 retry, followed by clean termination and redirect without loop.               |
+| Cookie Invalidation | Mutate/clear `orderhub_demo_session` cookie in browser context | On refetch, server action returns `{ ok: false }`.                                                                   | Proves real server-side session invalidation triggers sign out to `/login?reason=session_expired`. |
+
+### 9.4. Role-Based Access Control (RBAC) Matrix
+
+Roles are resolved from demo fixture emails in `src/mocks/data/auth.ts`:
+
+- `admin@orderhub.test` → `admin`
+- `staff@orderhub.test` → `staff`
+- `viewer@orderhub.test` → `viewer`
+- Any other valid email format → `viewer`
+
+| Permission             | admin | staff | viewer | UI Affordance / Impact                                             |
+| ---------------------- | :---: | :---: | :----: | ------------------------------------------------------------------ |
+| `orders:view`          |   ✓   |   ✓   |   ✓    | Access to `/orders` route and sidebar nav link                     |
+| `preferences:manage`   |   ✓   |   ✓   |   ✓    | Access to `/preferences` route and sidebar nav link                |
+| `orders:create`        |   ✓   |   ✓   |   ✗    | Rendered in sidebar "Your access" list; future Create Order button |
+| `orders:updateStatus`  |   ✓   |   ✓   |   ✗    | Rendered in sidebar "Your access" list; future status actions      |
+| `orders:uploadInvoice` |   ✓   |   ✓   |   ✗    | Rendered in sidebar "Your access" list; future upload affordance   |
+| `reports:view`         |   ✓   |   ✓   |   ✗    | Rendered in sidebar "Your access" list; future reports view        |
+| `reports:export`       |   ✓   |   ✗   |   ✗    | Rendered in sidebar "Your access" list; future export affordance   |
+
+### 9.5. Limits & Demo Boundary Notice
+
+- **Unsigned Access Tokens**: Demo access tokens are simple strings with TTL metadata and random salt. They are designed for client-side MSW verification and capstone flow demonstration, **not production authentication**.
+- **No Password Fixtures**: The application stores no user passwords. Any 8+ character password is accepted during login validation and immediately discarded.
+- **Client UI Hiding vs. Authorization Boundary**: Hiding navigation items or actions in the UI is an ergonomic affordance, **not authorization**. Future backend/MSW mutations must enforce 403 Forbidden responses on the server side for disallowed roles regardless of client state.

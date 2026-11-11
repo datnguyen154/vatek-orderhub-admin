@@ -6,12 +6,12 @@
     "pillars": {
       "fulfillmentTitle": "Vận hành thời gian thực:",
       "fulfillmentDesc": "Theo dõi đơn hàng liền mạch từ lúc chờ xử lý đến khi hoàn thành trên tất cả các kênh.",
-      "accessTitle": "Kiểm soát truy cập (Dự kiến):",
-      "accessDesc": "Phân quyền theo vai trò chưa được triển khai; giao diện này hoàn toàn là bản xem trước chưa xác thực.",
+      "accessTitle": "Kiểm soát truy cập theo vai trò:",
+      "accessDesc": "Các vai trò demo (Quản trị viên, Nhân viên, Người xem) quy định quyền hạn, điều hướng và ranh giới API.",
       "uiTitle": "Giao diện mật độ cao:",
       "uiDesc": "Các thành phần cơ sở có thể điều hướng bằng bàn phím, thân thiện với khả năng truy cập và tối ưu cho công việc quản trị hàng ngày."
     },
-    "statusIndicator": "Tích hợp giao diện Phiên 06 • Chưa kết nối backend xác thực",
+    "statusIndicator": "Xác thực Demo OrderHub • Cookie phiên có chữ ký cùng làm mới mã thông báo trong bộ nhớ",
     "formTitle": "Đăng nhập vào tài khoản của bạn",
     "formDescription": "Nhập thông tin đăng nhập demo bất kỳ để kiểm tra xác thực phía máy khách.",
     "formFooter": "Môi trường demo phục vụ đánh giá đồ án. Không có thông tin đăng nhập nào được lưu trữ.",
@@ -22,8 +22,30 @@
     "submitButton": "Đăng nhập vào Bảng điều khiển",
     "submittingButton": "Đang đăng nhập...",
     "authNotice": "Thông báo xác thực",
+    "serverError": "Dịch vụ xác thực hiện không khả dụng. Vui lòng thử lại sau.",
+    "sessionExpiredTitle": "Phiên đăng nhập đã hết hạn",
+    "sessionExpiredDesc": "Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.",
     "demoSessionTitle": "Phiên chế độ Demo",
-    "demoSessionDesc": "Nhập bất kỳ email hợp lệ và mật khẩu từ 8 ký tự trở lên để thiết lập phiên demo có chữ ký."
+    "demoSessionDesc": "Đăng nhập bằng admin@orderhub.test (Quản trị viên), staff@orderhub.test (Nhân viên), hoặc viewer@orderhub.test (Người xem). Sử dụng mật khẩu bất kỳ từ 8 ký tự trở lên."
+  },
+  "roles": {
+    "admin": "Quản trị viên",
+    "staff": "Nhân viên",
+    "viewer": "Người xem"
+  },
+  "access": {
+    "title": "Quyền truy cập của bạn",
+    "granted": "Được cấp",
+    "notGranted": "Không được cấp",
+    "permissions": {
+      "orders:view": "Xem đơn hàng",
+      "preferences:manage": "Quản lý tùy chọn",
+      "orders:create": "Tạo đơn hàng",
+      "orders:updateStatus": "Cập nhật trạng thái đơn hàng",
+      "orders:uploadInvoice": "Tải lên hóa đơn",
+      "reports:view": "Xem báo cáo",
+      "reports:export": "Xuất báo cáo"
+    }
   },
   "nav": {
     "orders": "Đơn hàng",

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
+import { getDemoSessionFromCookies } from "@/lib/auth/demo-session";
 import { LoginForm } from "@/features/auth/components/login-form";
 import {
   Card,
@@ -18,7 +20,20 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{
+    reason?: string;
+  }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  // If valid demo session already exists, redirect directly to /orders
+  const session = await getDemoSessionFromCookies();
+  if (session) {
+    redirect("/orders");
+  }
+
+  const { reason } = await searchParams;
   const t = await getTranslations("auth");
 
   return (
@@ -160,6 +175,30 @@ export default async function LoginPage() {
               size="md"
               className="w-full max-w-md sm:p-8"
             >
+              {/* Localized notice if session expired */}
+              {reason === "session_expired" && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-md border border-warning/30 bg-warning-muted p-4 mb-6"
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="mt-1 inline-block h-2 w-2 rounded-full bg-warning"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="text-body-medium font-semibold text-warning-muted-foreground">
+                        {t("sessionExpiredTitle")}
+                      </p>
+                      <p className="text-caption text-warning-muted-foreground mt-1">
+                        {t("sessionExpiredDesc")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <CardHeader className="p-0 mb-6">
                 <h2
                   id="form-heading"

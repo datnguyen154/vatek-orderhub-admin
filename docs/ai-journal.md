@@ -1707,7 +1707,6 @@ Codex revised `step-14.scope_files` to explicitly add `src/features/catalogue/co
    - _Correction_: Converted in-browser DOM lookups to standard JavaScript DOM methods (`Array.from(document.querySelectorAll('button')).find(el => el.textContent.includes(...))`).
 3. **Session state on local verification server restart**:
    - _Mistake_: Restarting the verification server cleared in-memory session cookies, causing direct requests to `/preferences` to redirect to `/login`.
-  
 
 ### 4. Verification Results
 
@@ -1734,3 +1733,115 @@ Codex revised `step-14.scope_files` to explicitly add `src/features/catalogue/co
 
 - Both repair rounds (r1 & r2) are completed. All uncommitted changes remain strictly unstaged and uncommitted on branch `feat/order-preferences-i18n`.
 - Ready for Codex review. Stop for review as required by Rule 15 and the two-round repair limit.
+
+---
+
+## Session 13 / Step-15 / D12 — Auth Flow, 401 Refresh, Route Guards, Role-Based UI
+
+- **Date**: 2026-11-11
+- **Task ID**: `step-15` (Day D12)
+- **Branch**: `feat/auth-refresh-rbac`
+- **Baseline SHA**: `c4bf1842946d949097b8e94f4c19a197bcd0cd00` (PR #9 merge)
+
+### 1. Task & Context
+
+Implement the two-layer demo authentication, in-memory token refresh, presence/route guards, role-based UI, and 401 recovery flow according to the user-approved implementation decisions:
+
+- Layer A: Signed httpOnly session cookie (`orderhub_demo_session`) containing `{ email, role, createdAt, expiresAt }` used for server-side route guards and layout verification.
+- Layer B: In-memory demo access token minted via `refreshAccessTokenAction()` with format `demo.<role>.<expiresAtMs>.<random>` and 5-minute TTL. Stored strictly in memory in `src/features/auth/token-store.ts`.
+- API Client (`apiClient`): Initial token acquisition on same-origin `/api/` endpoints, automatic `Authorization: Bearer <token>` attachment, 1 silent refresh + 1 retry on 401, followed by clean sign-out to `/login?reason=session_expired` without loops upon failure. Aborted requests never trigger refresh or sign-out.
+- MSW Handlers: Require `Bearer demo.*` with future expiry; support scenarios `expire-once` and `always-401`.
+- Role-based UI: Role badge in Topbar; "Your access" permission matrix list in Sidebar. Hiding UI is not authorization.
+- Zero credential/token persistence in browser storage or logs.
+
+### 2. Implementation Decisions & Message Architecture
+
+- **Two-Layer Demo Auth**:
+  - `src/lib/auth/demo-session.ts`: Updated `DemoSessionPayload` to include `role: Role`. `verifyDemoSession()` verifies `isValidRole(parsed.role)` and fails closed if invalid or expired.
+  - `src/mocks/data/auth.ts`: Fixture resolving `admin@orderhub.test -> admin`, `staff@orderhub.test -> staff`, `viewer@orderhub.test -> viewer`, other valid emails -> `viewer`. Contains zero passwords.
+  - `src/features/auth/actions.ts`: `loginAction` assigns role from fixtures and sets cookie; catches failures and returns localized message key `"serverError"` (never leaking secrets or diagnostics). `logoutAction` clears cookie. `refreshAccessTokenAction` mints unsigned demo access token.
+  - `src/features/auth/token-store.ts`: Stores token strictly in a module variable; deduplicates concurrent refresh calls using a shared in-flight promise; exposes `signOut()` which flushes memory and hard-redirects via `window.location.replace`.
+  - `src/features/auth/components/logout-button.tsx`: Client leaf in Server Component Topbar displaying pending state and executing hard navigation to drop QueryClient cache.
+  - `src/middleware.ts`: Presence-only guard for `/orders/:path*` and `/preferences/:path*`.
+  - `src/app/(auth)/login/page.tsx`: Redirects active sessions to `/orders`; displays localized status notice (`role="status"`) when `reason=session_expired`. Updated pillar copy to reflect demo auth.
+- **Role Matrix & Navigation**:
+  - `src/features/auth/types.ts`: Defined `Role` (`admin`, `staff`, `viewer`), `Permission` union, `ROLE_PERMISSIONS` matrix, and `hasPermission()`.
+  - `src/components/layout/sidebar.tsx`: Filters nav items by granted permission; displays "Your access" status list in clear text.
+  - `src/components/layout/topbar.tsx`: Displays localized role badge.
+- **Message Parity**:
+  - Added `roles` (`admin`, `staff`, `viewer`) and `access` (`title`, `granted`, `notGranted`, `permissions.*`) namespaces in both `messages/en.json` and `messages/vi.json` with 100% key parity.
+  - Added `serverError`, `sessionExpiredTitle`, `sessionExpiredDesc` to `auth` namespace.
+
+### 3. What AI Got Wrong & What Was Corrected
+
+1. **Badge Variant Type Mismatch**:
+   - _Mistake_: The Topbar role badge was initially written with `variant="primary"`, which caused TypeScript error TS2322 because `Badge` variants are strictly `"neutral" | "success" | "warning" | "destructive"`.
+   - _Correction_: Changed the Topbar role badge to use the standard `variant="neutral"` with semantic styling per `docs/design-system.md`.
+2. **Duplicate Import Header in Sidebar**:
+   - _Mistake_: When editing `sidebar.tsx`, an extra block of imports was unintentionally retained at the top of the file, resulting in TS2300 duplicate identifier errors.
+   - _Correction_: Cleaned up the imports to ensure a single, clean declaration block.
+3. **Playwright Navigation Waiting in App Router**:
+   - _Mistake_: Playwright tests initially used `page.waitForURL("**/orders")`, which hung because Next.js App Router client transitions from Server Actions do not trigger a full window `load` event.
+   - _Correction_: Switched to `page.waitForFunction(() => window.location.pathname === "/orders")`, providing reliable, instant assertion of client-side navigation.
+4. **Credential Protection & Storage Hygiene**:
+   - _Verification_: Verified that `localStorage` contains only `["theme", "orderhub_preferences"]` and `sessionStorage` is completely empty. No tokens, secrets, or passwords are saved or logged.
+
+### 4. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript strict check passed with zero errors).
+- `pnpm lint`: Exit code 0 (ESLint passed; 1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully).
+- `pnpm format:check`: Exit code 1 (fails solely on the 3 documented pre-existing baseline files).
+- Scoped `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched allowlist files.
+- `git diff --check`: Exit code 0 (clean diff, zero whitespace anomalies).
+- **Playwright Evidence (`output/playwright/session-13/`)**:
+  - 25 screenshots and machine-readable `results.json` covering:
+    - Flow 1: Unauthenticated `/orders` and `/preferences` redirect to `/login` (`flow1-unauthenticated-orders-to-login.png`, `flow1-unauthenticated-preferences-to-login.png`).
+    - Flow 2: Admin, staff, and viewer RBAC role badge and "Your access" permissions in EN and VI (`flow2-admin-en.png`, `flow2-admin-vi.png`, `flow2-staff-en.png`, `flow2-staff-vi.png`, `flow2-viewer-en.png`, `flow2-viewer-vi.png`).
+    - Flow 3: Authenticated session visiting `/login` redirects to `/orders` (`flow3-valid-session-login-redirect.png`).
+    - Flow 4: `expire-once` scenario: exactly 1 401 request, 1 silent refresh, 1 retried 200 request, rows rendered (`flow4-expire-once-orders.png`).
+    - Flow 5: `always-401` scenario: 1 401 request, 1 refresh, 1 retried 401, clean redirect to `/login?reason=session_expired` without looping, notice rendered (`flow5-always-401-redirect.png`).
+    - Flow 6: Real cookie corruption on `/orders` causes server action refresh to return `{ ok: false }`, terminating to `/login?reason=session_expired` (`flow6-invalid-cookie-session-expired.png`).
+    - Flow 7: Logout button clears in-memory token and cookie, hard-navigates to `/login`, and switching to viewer role displays viewer permissions without stale state (`flow7-logout.png`, `flow7-switch-role.png`).
+    - Flow 8: Storage audit confirms zero tokens in `localStorage` or `sessionStorage` (`flow8-storage-inspection.png`).
+    - Flow 9: Keyboard navigation focus verified across inputs, submit button, and logout button (`flow9-keyboard-focus.png`, `flow9-keyboard-login.png`).
+    - Flow 10: Responsive measurements at 375, 768, 1280, 1920px confirm zero horizontal page overflow (`scrollWidth <= clientWidth`) on both `/login` and `/orders` (8 screenshot artifacts).
+
+### 5. Remaining Limitations & Next Steps
+
+- This implementation is a learning/capstone demo auth contract, not production auth.
+- Access tokens are simple unsigned strings with TTL timestamps and random salt, intended for local development and MSW evaluation.
+- UI permission checks govern presentation only; subsequent backend/MSW mutations must enforce 403 authorization checks.
+- Code and evidence left uncommitted and unstaged on branch `feat/auth-refresh-rbac` for coordinator review.
+
+## 2026-11-11 — Session 13 / step-15 — Repair Round 1 (r1)
+
+### 1. Findings Addressed
+
+1. **F1 — Non-existent Token Classes**:
+   - Replaced `text-warning-muted-fg` with `text-warning-muted-foreground` in `src/app/(auth)/login/page.tsx` (2 instances).
+   - Restored `text-destructive-muted-foreground` in `src/features/auth/components/login-form.tsx`.
+   - Grepped entire codebase for `-fg\b` colour classes; verified zero remaining instances in `src`.
+2. **F2 — Status Text Contrast**:
+   - Removed `/60` opacity modifier from "Not granted" status text in `src/components/layout/sidebar.tsx` (`text-muted-foreground/60` -> `text-muted-foreground`).
+   - Measured contrast ratio against sidebar surface (`#ffffff` light, `#1e293b` dark): light mode achieves 7.58:1 (exceeds WCAG AA 4.5:1), dark mode achieves 5.71:1 (exceeds WCAG AA 4.5:1).
+3. **F3 — Permission Label Truncation**:
+   - Replaced `truncate` with `break-words` on permission item labels in `src/components/layout/sidebar.tsx`. Preserved `shrink-0` on status labels.
+   - Verified in Vietnamese mode at 1280px: all 7 permission labels have `scrollWidth <= clientWidth` (zero truncation).
+4. **F4 — Fractional Spacing Elimination**:
+   - Replaced `space-y-1.5` with `space-y-1` in `src/components/layout/sidebar.tsx`.
+   - Replaced `mt-0.5` with `mt-1` in `src/app/(auth)/login/page.tsx`.
+5. **F6 (Optional) — Heading Hierarchy**:
+   - Changed "Your access" heading in `src/components/layout/sidebar.tsx` from `<h3>` to `<p id="access-heading">` and associated with `<ul aria-labelledby="access-heading">`, resolving heading hierarchy warnings.
+6. **F5 — Handoff & Evidence Accuracy**:
+   - Authored `docs/handoffs/session-13-r1.md` containing measured contrast values, granular request counts distinguishing initial token acquisition vs 401-triggered refresh, and documented known mobile limitation.
+
+### 2. Live Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0.
+- `pnpm lint`: Exit code 0 (1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0.
+- Scoped `pnpm exec prettier --check <touched_files>`: Exit code 0.
+- `git diff --check`: Exit code 0.
+- Playwright verification artifacts recorded in `output/playwright/session-13-r1/` (13 screenshots + `results.json`).
+- All changes remain uncommitted and unstaged on `feat/auth-refresh-rbac`.

@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
 import crypto from "node:crypto";
+import { isValidRole, type Role } from "@/features/auth/types";
 
 /**
  * OrderHub Demo Session Management
  *
  * NOTE: This is a learning/demo route guard for capstone evaluation, NOT production authentication.
- * - Minimal signed payload containing email, creation timestamp, and expiration timestamp.
+ * - Minimal signed payload containing email, role, creation timestamp, and expiration timestamp.
  * - Never logs, persists, or stores user passwords.
  * - Never puts credentials into cookies, localStorage, or client props.
  * - Signs tokens using HMAC-SHA256 with DEMO_SESSION_SECRET.
@@ -20,6 +21,7 @@ export const DEMO_SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
 
 export interface DemoSessionPayload {
   email: string;
+  role: Role;
   createdAt: number;
   expiresAt: number;
 }
@@ -42,11 +44,12 @@ function getSecretKey(): string {
  * Signs a demo session payload using HMAC-SHA256.
  * Output format: `<base64url(payload)>.<base64url(hmac_signature)>`
  */
-export function signDemoSession(email: string): string {
+export function signDemoSession(email: string, role: Role): string {
   const secret = getSecretKey();
   const now = Date.now();
   const payload: DemoSessionPayload = {
     email: email.trim(),
+    role,
     createdAt: now,
     expiresAt: now + DEMO_SESSION_MAX_AGE_SECONDS * 1000,
   };
@@ -65,7 +68,7 @@ export function signDemoSession(email: string): string {
  * Verifies a demo session token.
  * Validates payload structure, checks expiration, and validates HMAC signature
  * using constant-time comparison after checking equal byte lengths.
- * Returns null if invalid, expired, or if secret is missing/weak.
+ * Returns null if invalid, expired, missing valid role, or if secret is missing/weak.
  */
 export function verifyDemoSession(
   token: string | null | undefined
@@ -108,10 +111,12 @@ export function verifyDemoSession(
     );
     const parsed = JSON.parse(payloadJson) as Partial<DemoSessionPayload>;
 
+    // Validates payload structure including approved role enum
     if (
       !parsed ||
       typeof parsed.email !== "string" ||
       !parsed.email ||
+      !isValidRole(parsed.role) ||
       typeof parsed.createdAt !== "number" ||
       typeof parsed.expiresAt !== "number"
     ) {
@@ -125,6 +130,7 @@ export function verifyDemoSession(
 
     return {
       email: parsed.email,
+      role: parsed.role,
       createdAt: parsed.createdAt,
       expiresAt: parsed.expiresAt,
     };
@@ -153,8 +159,11 @@ export async function getDemoSessionFromCookies(): Promise<DemoSessionPayload | 
 /**
  * Sets the signed demo session cookie on the response.
  */
-export async function setDemoSessionCookie(email: string): Promise<void> {
-  const token = signDemoSession(email);
+export async function setDemoSessionCookie(
+  email: string,
+  role: Role
+): Promise<void> {
+  const token = signDemoSession(email, role);
   const cookieStore = await cookies();
   cookieStore.set(DEMO_SESSION_COOKIE_NAME, token, {
     httpOnly: true,
