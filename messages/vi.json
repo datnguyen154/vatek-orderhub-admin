@@ -83,6 +83,7 @@
     "clearFilters": "Xóa bộ lọc",
     "refresh": "Làm mới",
     "updating": "Đang cập nhật đơn hàng...",
+    "createButton": "Tạo đơn hàng",
     "filters": {
       "searchLabel": "Tìm kiếm mã đơn",
       "searchPlaceholder": "vd: ORD-2026-001",
@@ -119,7 +120,114 @@
       "page": "Trang",
       "pageOf": "trên",
       "prevAria": "Đi đến trang trước",
-      "nextAria": "Đi đến trang sau"
+      "nextAria": "Đi đến trang sau",
+      "saving": "Đang lưu…"
+    },
+    "create": {
+      "title": "Tạo đơn hàng",
+      "description": "Tạo đơn hàng mới của khách hàng kèm các mặt hàng và mức chiết khấu.",
+      "loading": "Đang tải biểu mẫu tạo đơn hàng...",
+      "backToOrders": "Quay lại danh sách đơn hàng",
+      "fieldsAttention": "{count, plural, other {# trường cần chú ý}}",
+      "stepper": {
+        "navAria": "Điều hướng các bước tạo đơn hàng",
+        "step1Label": "Bước 1 / 3",
+        "step1Title": "Khách hàng",
+        "step2Label": "Bước 2 / 3",
+        "step2Title": "Mặt hàng",
+        "step3Label": "Bước 3 / 3",
+        "step3Title": "Xem lại",
+        "statusCurrent": "Hiện tại",
+        "statusCompleted": "Đã xong",
+        "statusUpcoming": "Sắp tới"
+      },
+      "noPermission": {
+        "title": "Quyền truy cập bị hạn chế",
+        "description": "Vai trò hiện tại của bạn không có quyền tạo đơn hàng.",
+        "backToOrders": "Quay lại danh sách đơn hàng"
+      },
+      "customerStep": {
+        "heading": "Bước 1: Thông tin khách hàng",
+        "subheading": "Chọn tài khoản khách hàng và cung cấp mã đơn đặt hàng (PO) nếu có.",
+        "customerLabel": "Khách hàng",
+        "selectPlaceholder": "Chọn một khách hàng...",
+        "poNumberLabel": "Số PO (tùy chọn)",
+        "poNumberPlaceholder": "vd: PO-2026-001",
+        "loadingCustomers": "Đang tải danh sách khách hàng...",
+        "loadError": "Không thể tải danh sách khách hàng.",
+        "retry": "Thử tải lại",
+        "next": "Tiếp tục chọn mặt hàng"
+      },
+      "itemsStep": {
+        "heading": "Bước 2: Các mặt hàng",
+        "subheading": "Tìm kiếm sản phẩm từ danh mục, thiết lập số lượng và mức chiết khấu áp dụng.",
+        "searchLabel": "Tìm kiếm sản phẩm",
+        "searchPlaceholder": "Tìm theo tên sản phẩm hoặc mã SKU...",
+        "resultsFound": "Tìm thấy {count} sản phẩm",
+        "addProduct": "Thêm",
+        "addProductAria": "Thêm {name} vào đơn hàng",
+        "selectedItemsHeading": "Các mặt hàng trong đơn",
+        "emptyItems": "Chưa có mặt hàng nào được thêm. Hãy tìm kiếm và thêm sản phẩm ở trên.",
+        "table": {
+          "product": "Sản phẩm",
+          "price": "Đơn giá",
+          "quantity": "Số lượng",
+          "discount": "Chiết khấu (%)",
+          "lineTotal": "Thành tiền"
+        },
+        "remove": "Xóa",
+        "removeAria": "Xóa {name} khỏi đơn hàng",
+        "loadingProducts": "Đang tải danh sách sản phẩm...",
+        "loadError": "Không thể tải danh sách sản phẩm.",
+        "back": "Quay lại bước khách hàng",
+        "next": "Tiếp tục đến bước xem lại"
+      },
+      "reviewStep": {
+        "heading": "Bước 3: Xem lại và gửi đơn",
+        "subheading": "Kiểm tra kỹ thông tin khách hàng, các mặt hàng, mức chiết khấu và tổng thanh toán trước khi gửi.",
+        "customerSection": "Thông tin khách hàng",
+        "editCustomer": "Sửa khách hàng",
+        "customerName": "Tên khách hàng",
+        "customerEmail": "Email",
+        "poNumber": "Số PO",
+        "none": "Không có",
+        "itemsSection": "Các mặt hàng",
+        "editItems": "Sửa mặt hàng",
+        "table": {
+          "product": "Sản phẩm",
+          "price": "Đơn giá",
+          "quantity": "Số lượng",
+          "discount": "Chiết khấu",
+          "lineTotal": "Thành tiền"
+        },
+        "subtotal": "Tạm tính",
+        "discount": "Chiết khấu",
+        "total": "Tổng thanh toán",
+        "back": "Quay lại danh sách hàng",
+        "submit": "Gửi đơn hàng",
+        "submitting": "Đang gửi đơn hàng..."
+      },
+      "validation": {
+        "summaryHeading": "Vui lòng khắc phục các lỗi sau:",
+        "customerRequired": "Vui lòng chọn khách hàng",
+        "poNumberMax": "Số PO không được vượt quá 40 ký tự",
+        "itemsMin": "Phải có ít nhất 1 dòng sản phẩm",
+        "itemsMax": "Không được vượt quá 20 dòng sản phẩm",
+        "productRequired": "Vui lòng chọn sản phẩm",
+        "duplicateProduct": "Sản phẩm này đã được thêm vào đơn hàng",
+        "quantityMin": "Số lượng tối thiểu là 1",
+        "quantityMax": "Số lượng không được vượt quá 999",
+        "quantityInteger": "Số lượng phải là số nguyên",
+        "discountMin": "Chiết khấu không được nhỏ hơn 0%",
+        "discountMax": "Chiết khấu không được vượt quá 50%",
+        "discountInteger": "Chiết khấu phải là số nguyên từ 0 đến 50"
+      },
+      "toast": {
+        "success": "Đã tạo đơn hàng {code}",
+        "error": "Tạo đơn hàng thất bại. Vui lòng thử lại.",
+        "noPermission": "Bạn không có quyền tạo đơn hàng.",
+        "reviewAndRetry": "Xem lại và thử lại"
+      }
     }
   },
   "preferences": {

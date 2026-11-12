@@ -13,7 +13,7 @@
 "use client";
 
 import { useTranslations, useLocale } from "next-intl";
-import type { Order, OrderStatus } from "../types";
+import { type Order, type OrderStatus, isOptimisticOrder } from "../types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -147,7 +147,13 @@ export function OrdersTable({
                   className="hover:bg-muted/40 transition-colors"
                 >
                   <td className="py-3 px-4 font-mono text-caption font-medium text-foreground whitespace-nowrap">
-                    {order.orderCode}
+                    {isOptimisticOrder(order) ? (
+                      <Badge variant="warning" size="sm">
+                        {t("saving")}
+                      </Badge>
+                    ) : (
+                      order.orderCode
+                    )}
                   </td>
                   <td className="py-3 px-4 text-body text-foreground whitespace-nowrap">
                     <div>{order.customerName}</div>

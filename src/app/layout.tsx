@@ -5,6 +5,7 @@ import { MockProvider } from "@/components/providers/mock-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { InternationalizationProvider } from "@/components/providers/internationalization-provider";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +32,10 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
           <InternationalizationProvider locale={locale} messages={messages}>
             <MockProvider>
-              <QueryProvider>{children}</QueryProvider>
+              <QueryProvider>
+                {children}
+                <Toaster />
+              </QueryProvider>
             </MockProvider>
           </InternationalizationProvider>
         </ThemeProvider>

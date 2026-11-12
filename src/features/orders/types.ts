@@ -1,7 +1,7 @@
 /**
  * OrderHub Admin Console — Orders Type Definitions & Runtime Type Guards
  *
- * Explicit TypeScript contracts for Order entities and API responses.
+ * Explicit TypeScript contracts for Order entities, catalog entities, and API responses.
  * Runtime type guards validate `unknown` JSON data without relying on unsafe type assertions.
  */
 
@@ -46,6 +46,51 @@ export interface OrdersFilterParams {
   search?: string;
   startDate?: string;
   endDate?: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface CustomersResponse {
+  data: Customer[];
+}
+
+export interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  unitPrice: number;
+}
+
+export interface ProductsResponse {
+  data: Product[];
+}
+
+export interface CreateOrderItemInput {
+  productId: string;
+  quantity: number;
+  discountPercent: number;
+}
+
+export interface CreateOrderInput {
+  idempotencyKey: string;
+  customerId: string;
+  poNumber?: string;
+  items: CreateOrderItemInput[];
+}
+
+export interface CreateOrderResponse {
+  data: Order;
+}
+
+/**
+ * Returns true if the order is an optimistic local insertion (starts with "tmp_").
+ */
+export function isOptimisticOrder(order: Order): boolean {
+  return order.id.startsWith("tmp_");
 }
 
 /**
@@ -136,4 +181,79 @@ export function isOrdersResponse(value: unknown): value is OrdersResponse {
   }
 
   return record.data.every((item) => isOrder(item));
+}
+
+/**
+ * Type guard to validate an unknown value as a Customer object.
+ */
+export function isCustomer(value: unknown): value is Customer {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === "string" &&
+    record.id.trim() !== "" &&
+    typeof record.name === "string" &&
+    record.name.trim() !== "" &&
+    typeof record.email === "string" &&
+    record.email.trim() !== ""
+  );
+}
+
+/**
+ * Type guard to validate an unknown value as a CustomersResponse object.
+ */
+export function isCustomersResponse(
+  value: unknown
+): value is CustomersResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return Array.isArray(record.data) && record.data.every((c) => isCustomer(c));
+}
+
+/**
+ * Type guard to validate an unknown value as a Product object.
+ */
+export function isProduct(value: unknown): value is Product {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === "string" &&
+    record.id.trim() !== "" &&
+    typeof record.sku === "string" &&
+    record.sku.trim() !== "" &&
+    typeof record.name === "string" &&
+    record.name.trim() !== "" &&
+    typeof record.unitPrice === "number" &&
+    !Number.isNaN(record.unitPrice)
+  );
+}
+
+/**
+ * Type guard to validate an unknown value as a ProductsResponse object.
+ */
+export function isProductsResponse(value: unknown): value is ProductsResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return Array.isArray(record.data) && record.data.every((p) => isProduct(p));
+}
+
+/**
+ * Type guard to validate an unknown value as a CreateOrderResponse object.
+ */
+export function isCreateOrderResponse(
+  value: unknown
+): value is CreateOrderResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return isOrder(record.data);
 }

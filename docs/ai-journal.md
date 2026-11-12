@@ -1845,3 +1845,189 @@ Implement the two-layer demo authentication, in-memory token refresh, presence/r
 - `git diff --check`: Exit code 0.
 - Playwright verification artifacts recorded in `output/playwright/session-13-r1/` (13 screenshots + `results.json`).
 - All changes remain uncommitted and unstaged on `feat/auth-refresh-rbac`.
+
+## Session 14 — Step-16 / D13 — Create Order Wizard & Optimistic UI
+
+- **Date**: 2026-11-11
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `4bd166f2793210d717bbfb335c0d7448efaa3465` (`Merge pull request #10 from datnguyen154/feat/auth-refresh-rbac`)
+- **Branch**: `feat/create-order-wizard`
+
+### 1. Task Overview
+
+Implemented the 3-step Create Order wizard (Customer → Line items → Review and submit) with full client-side validation using React Hook Form + Zod, catalog integration (customers and products), optimistic UI mutations with TanStack Query v5, exact snapshot rollback on error, module-level draft persistence with Sonner toast "Review and retry" action, and idempotency key reuse:
+
+1. **Step 1 — Customer Step (`create-order-customer-step.tsx`)**:
+   - Customer selection backed by `GET /api/customers` fixture query.
+   - Optional PO reference (trimmed, max 40 chars).
+   - Validates selection before advancing; focuses the native Select element on validation failure.
+2. **Step 2 — Line Items Step (`create-order-items-step.tsx`)**:
+   - Searchable product catalog backed by `GET /api/products` fixture query (case-insensitive search by product name and SKU).
+   - Dynamic line items via React Hook Form `useFieldArray`.
+   - Duplicate prevention: attempting to add an already selected product focuses and selects the existing line's quantity input rather than appending a duplicate row.
+   - Line-level boundary validation: rejected quantities (0, negative, decimals, > 999), rejected discounts (negative, > 50%, decimals).
+   - Line removal button; real-time recalculation of line totals and order totals.
+3. **Step 3 — Review & Submit Step (`create-order-review-step.tsx`)**:
+   - Complete order overview displaying selected customer details, PO number, and line items table.
+   - Precise financial calculation computed in integer cents (`calculateOrderTotals`) to eliminate binary floating-point rounding errors.
+   - Direct jump buttons to edit customer (Step 1) or items (Step 2); Back button preserves all form state without re-validation or data loss.
+4. **Optimistic Mutation & Rollback (`use-create-order.ts`)**:
+   - TanStack Query mutation with hook-level callbacks (`onMutate`, `onError`, `onSuccess`) that survive wizard unmounting.
+   - `onMutate`: immediately prepends optimistic Order (`ORD-PENDING`, `_isOptimistic: true`) with `<Badge variant="warning">{t("saving")}</Badge>` into matching page-1 cached orders queries, and navigates to `/orders`.
+   - `onSuccess`: invalidates `["orders"]` query cache, drops saved draft, and shows success toast (`Order ORD-2026-XXX created`).
+   - `onError`: restores exact snapshot of cached queries (`setQueryData`), retains form draft and idempotency key in module memory, and surfaces error toast with action "Review and retry" linking to `/orders/new?resume=1`.
+   - Idempotency key reuse: resuming from error restores the exact same idempotency key and values at Step 3; repeated submit succeeds on `create=fail-once` with zero duplicate entries.
+5. **Role-Based Guards & MSW Interception**:
+   - `/orders`: "New order" button rendered only for roles with `orders:create` permission (`admin`, `staff`).
+   - `/orders/new`: Server Component route guard renders an accessible "Access restricted" card for roles lacking permission (`viewer`).
+   - `src/mocks/handlers.ts`: Enforces Bearer token authentication and role-based 403 authorization guard on `POST /api/orders`; simulates 1200ms processing delay; supports `create=fail` and `create=fail-once` scenarios.
+
+### 2. Prompting Approach
+
+1. **Systematic Verification-First Workflow**: Verified baseline HEAD and clean tree before generating code; pinned required dependencies (`react-hook-form@7.91.0`, `zod@4.6.7`, `@hookform/resolvers@7.0.5`, `sonner@2.0.8`) with exact versions in `package.json`.
+2. **Strict Section 5 Allowlist Conformance**: Confined changes strictly to allowlist paths without touching coordinator files (`tasks.json`, `.agents/*`), week-1 labs, or baseline files.
+3. **Deterministic Financial Math**: Implemented all price, discount, and total calculations in integer cents with single final division by 100, ensuring bit-exact parity between client calculations, review step presentation, and MSW server totals.
+
+### 3. What the AI Got Wrong & Fixes Applied
+
+1. **Multi-Step Form Validation vs. Whole-Schema Resolver Conflict**:
+   - _Mistake_: The wizard form was initialized with `resolver: zodResolver(createOrderSchema)` where `items` has `.min(1)`. When the user clicked "Continue to line items" on Step 1, calling `form.trigger(["customerId", "poNumber"])` invoked the full schema resolver. Because `items` was initially empty (`[]`), the resolver returned schema errors, causing `trigger()` to return `false` even though the customer field was valid.
+   - _Fix_: Defined modular step schemas: `customerStepSchema` for Step 1 and `itemsStepSchema` for Step 2. `handleCustomerNext` and `handleItemsNext` safely validate current-step fields using `.safeParse()` and assign errors/focus without being blocked by unreached subsequent steps, while `handleSubmit` validates the unified `createOrderSchema`.
+2. **Next-Intl ICU Plural Syntax Chunk Resolution**:
+   - _Mistake_: Initial translation messages used ICU plural syntax `{count, plural, =0 {...} =1 {...} other {...}}` which caused Next.js runtime to look for `@formatjs/icu-messageformat-parser` chunk at runtime during `next start`.
+   - _Fix_: Simplified message template strings to direct interpolation (`{count} products found` / `{count} sản phẩm được tìm thấy`), which compiles without external chunk dependencies.
+3. **TanStack Query v5 `setQueriesData` Type Signature**:
+   - _Mistake_: Initial hook implementation passed `(oldData, query) => ...` to `queryClient.setQueriesData`. In TanStack Query v5, updater functions receive only `(oldData)`.
+   - _Fix_: Used `queryClient.getQueriesData({ queryKey: ["orders"] })` to snapshot existing query entries, then iterated through entries to apply `queryClient.setQueryData(key, ...)` with exact parameter matching.
+4. **Link Parameter Preservation for Scenario Testing**:
+   - _Mistake_: The "New order" button in `src/app/(dashboard)/orders/page.tsx` had a static `href="/orders/new"`. When testing scenario URLs like `/orders?create=fail`, clicking the button performed client navigation to `/orders/new` without query parameters.
+   - _Fix_: Updated `OrdersPage` Server Component to extract `create` search param and pass it forward to `<Link href={`/orders/new${createParam}`}>`, preserving scenario triggers across client-side transitions.
+
+### 4. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (TypeScript 5.8.2 strict check passed with zero errors).
+- `pnpm lint`: Exit code 0 (ESLint passed; 1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 production build compiled successfully).
+- Scoped `pnpm exec prettier --check <touched_files>`: Exit code 0 across all touched allowlist files.
+- `git diff --check`: Exit code 0 (clean diff, zero whitespace anomalies).
+- `git diff --cached`: Clean (zero staged changes).
+- **Playwright Evidence Suite (`output/playwright/session-14/`)**:
+  - 44 screenshots and machine-readable `results.json` covering:
+    - Item 1: Permissions matrix: "New order" button visible for admin and staff, hidden for viewer; viewer access-restricted card on `/orders/new`; direct viewer `POST /api/orders` returns 403 Forbidden.
+    - Item 2: Customer step validation: empty submit blocked with error, focus lands on `#customer-select`; selecting `cus_001` advances to Step 2.
+    - Item 3: Items step validation: empty items blocked with alert; search by SKU ("sku" -> 12 results) and name ("Pallet" -> 2 results); duplicate product add focuses existing quantity input without creating a second line; validation error states (qty 0, disc 60, decimal 1.5); line removal updates totals.
+    - Item 4: Review summary & navigation: integer-cent hand calculation matches screen values down to the exact cent; Edit customer jumps to Step 1 with values retained; Back button preserves all item quantities and discounts.
+    - Item 5: Optimistic success: during 1200ms POST delay, pending row displays `Saving…` badge; afterwards real `ORD-2026-011` appears with success toast and zero duplicate rows.
+    - Item 6: Failure rollback with `?create=fail`: before submit rows, pending row with `Saving…` badge, and post-failure rollback match initial state exactly (`isRolledBackExact: true`); error toast displays with "Review and retry" button.
+    - Item 7: Retry with `?create=fail-once`: initial attempt fails, "Review and retry" resumes at Step 3 (`/orders/new?resume=1`) restoring all values and reusing the exact same `idempotencyKey`; second attempt succeeds with 1 order created (2 POST requests, 2 identical keys).
+    - Item 8: Session 13 regression check: `/orders?auth=expire-once` triggers 401, 1 silent refresh, 1 retried 200 request, rendering all orders.
+    - Item 9: i18n & keyboard accessibility: full wizard passes in en and vi with 0 missing message warnings; visible focus styles verified on interactive elements; toast action button is reachable by keyboard.
+    - Item 10: Responsive layout & theme matrix: 16 viewport measurements (375, 768, 1280, 1920px across `/orders` and `/orders/new` steps 1, 2, 3) confirm zero horizontal page overflow (`scrollWidth <= clientWidth`); light and dark theme contrast verified.
+
+### 5. Remaining Limitations & Next Steps
+
+- This wizard implementation uses mock catalog data fixtures (`mockCustomers`, `mockProducts`) and MSW request interception for demo/capstone purposes.
+- Access token issuance and RBAC authorization boundaries remain scoped to the learning evaluation model.
+- Code and evidence left strictly uncommitted and unstaged on branch `feat/create-order-wizard` for coordinator review.
+
+## Session 14 Repair r1 — Step-16 / D13: Create Order Wizard Polish
+
+- **Date**: 2026-11-11
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+
+### 1. Codex Review Analysis & Repair Scope
+
+Codex requested 7 specific repairs in `session-14/r1-prompt.md`:
+
+1. **F1 — No mock fixtures in client code**: In `src/features/orders/hooks/use-create-order.ts`, remove `@/mocks/data/*` imports. Read products and customers only from TanStack Query cache (`["products"]`, `["customers"]`). If either query cache entry is missing, cleanly skip the optimistic cache patch while still submitting the order.
+2. **F2 — Hardcoded string**: Replace "Loading wizard..." Suspense fallback with a localized message key in both `messages/en.json` and `messages/vi.json`, maintaining exact key parity.
+3. **F3 — Scenario link**: In `src/app/(dashboard)/orders/page.tsx`, forward `searchParams.create` to `/orders/new` only when it is strictly `"fail"` or `"fail-once"`; ignore any other value.
+4. **F4 — Final validation**: Review → Submit must execute `form.handleSubmit(onValid)` validating `createOrderSchema`. If validation fails, remain on Review, display the step-level `role="alert"` error summary, and do not call `mutate` or navigate.
+5. **F5 / F6 — Evidence & settled dark theme contrast**: Re-capture evidence into `output/playwright/session-14-r1/` including:
+   - `item3-items-duplicate-focus.png`: focused quantity field visibly focused with ring;
+   - Dark theme captured after theme transition has fully settled (>= 500ms and `prefers-reduced-motion: reduce`) for `/orders`, `/orders/new` steps 1–3, and error toast. Completed step titles, Edit buttons, and Sign out button verified readable with high contrast ratios;
+   - Quick replay of items 5–7 (optimistic success, rollback, fail-once retry) confirming request counts and `idempotencyKey` reuse match.
+6. **F7 — Handoff accuracy**: In `docs/handoffs/session-14-r1.md`, accurately describe the `tmp_` ID prefix (not `_isOptimistic`), and document the actual badge variants and contrast ratios used by the stepper and saving badge.
+
+### 2. Implementation Decisions & Fixes Applied
+
+- **F1 (Zero Client Mock Imports)**:
+  - Removed `mockProducts` and `mockCustomers` imports from `src/features/orders/hooks/use-create-order.ts`.
+  - In `onMutate`, queried `queryClient.getQueryData<ProductsResponse>(["products"])?.data` and `queryClient.getQueryData<CustomersResponse>(["customers"])?.data`. If either is missing, optimistic cache patch is bypassed and mutation continues.
+  - Verified with `git grep --untracked "mocks/data" src/features/orders src/components src/app` returning 0 occurrences.
+- **F2 (Localized Wizard Loading Message)**:
+  - Added `"loading": "Loading wizard..."` to `messages/en.json` and `"loading": "Đang tải biểu mẫu tạo đơn hàng..."` to `messages/vi.json`.
+  - Extracted `<CreateOrderWizardFallback />` component consuming `useTranslations("orders.create")`.
+- **F3 (Strict Whitelist for Scenario Forwarding)**:
+  - In `src/app/(dashboard)/orders/page.tsx`, checked `searchParams.create === "fail" || searchParams.create === "fail-once"`. Any other string/type results in empty query param string `""`.
+- **F4 (Final Submit Validation & Step Alert)**:
+  - In `create-order-wizard.tsx`, bound Step 3 submit to `const handleReviewSubmit = form.handleSubmit(handleValidSubmit)`.
+  - In `create-order-review-step.tsx`, integrated `form.formState.errors` checking and rendered a step-level `role="alert"` box with summary heading and list of localized error messages when validation fails.
+- **F5 / F6 (Evidence, Focus & Contrast)**:
+  - In `create-order-items-step.tsx`, added `inputEl.scrollIntoView({ block: "center", behavior: "smooth" })` before focusing existing line item quantity field.
+  - In `create-order-review-step.tsx`, updated Edit buttons to `variant="secondary"`, ensuring clear control borders and 13.98:1 text contrast.
+  - In `create-order-wizard.tsx`, updated completed stepper step to `border-border bg-surface text-foreground` (13.98:1 contrast).
+  - Emulated `prefers-reduced-motion: reduce` and added 600ms settling pause in Playwright before capturing dark theme screens.
+- **F7 (Accurate Architecture & Contrast Documentation)**:
+  - Clarified that optimistic row detection uses `isOptimisticOrder(order) => order.id.startsWith("tmp_")`.
+  - Computed and documented contrast ratios for `<Badge variant="warning">` (Saving…, Current step: 6.87:1 light / 10.42:1 dark), `<Badge variant="success">` (Completed step: 6.14:1 light / 11.19:1 dark), and `<Badge variant="neutral">` (Upcoming step: 6.70:1 light / 3.98:1 dark on muted / 5.67:1 on surface).
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0.
+- `pnpm lint`: Exit code 0 (0 errors, 1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0 (compiled Next.js 15.5.29 app routes successfully).
+- Scoped `prettier --check`: Exit code 0 across all modified and untracked files.
+- `git diff --check`: Exit code 0.
+- `git diff --cached`: Empty (exit code 0).
+- **Playwright Evidence Suite (`output/playwright/session-14-r1/`)**:
+  - `item3-items-duplicate-focus.png`: Focus on `input[name="items.0.quantity"]` visibly highlighted and centered.
+  - `dark-orders.png`: Orders table in settled dark theme (Sign out button contrast 13.98:1).
+  - `dark-step1.png`, `dark-step2.png`, `dark-step3.png`: Wizard steps in settled dark theme (completed step title contrast 13.98:1, edit buttons contrast 13.98:1).
+  - `dark-error-toast.png`: Sonner error toast in settled dark theme (toast text contrast 13.98:1, action button contrast 5.17:1).
+  - `item5-optimistic-saving-row.png` & `item5-success-toast-real-row.png`: Optimistic insert during delay (1 POST).
+  - `item6-before-submit.png`, `item6-pending-saving.png`, `item6-after-rollback.png`: Rollback matches initial snapshot 100% (1 POST).
+  - `item7-retry-resume-review.png`, `item7-retry-saving.png`, `item7-retry-success.png`: Draft and idempotency key preserved across retry (`b973cc82-08e9-47ff-ba9c-8035775f4fc8`), 1 order added (2 POSTs).
+  - `results.json`: Full machine-readable test execution report.
+
+## Session 14 Repair r2 (Final) — Step-16 / D13: Wizard UX Polish
+
+- **Date**: 2026-11-11
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+
+### 1. Codex Review Analysis & Repair Scope
+
+Based on user testing feedback, Codex requested 6 specific UX enhancements in `session-14/r2-prompt.md`:
+
+1. **Shared Sticky Action Bar**: Move Back / Next / Submit navigation buttons out of individual step components into one shared sticky action bar rendered by `create-order-wizard.tsx` at `sticky bottom-0 z-10 border-t border-border bg-surface`. Ensure it remains visible at every step without scrolling and does not cover content when scrolled to the bottom.
+2. **Compact Responsive Mobile Stepper**: Below `sm` (375px), render stepper as a single horizontal row with step numbers, short titles, and current step status text (`aria-current="step"`). Preserve the 3-card layout at `sm` and wider.
+3. **Top Error Box Removal & Action Bar Alert**: Remove the large top error summary box from all three steps. Retain inline error messages with `aria-invalid` and `aria-describedby` under invalid controls. Introduce a concise `role="alert"` ICU plural message inside the sticky action bar (e.g., `1 field needs attention` / `1 trường cần chú ý`) that disappears as soon as errors are resolved. A blocked Next action must not cause unexpected page scroll jumps.
+4. **Toast Semantic Icons & Background Specificity**: Configure Sonner `icons` prop with semantic inline SVGs (`text-success`, `text-destructive`, `text-warning`, `text-primary`). Remove conflicting `bg-surface` / `text-foreground` base styling so semantic background and text colors render cleanly in both light and dark themes.
+5. **Back to Orders Link**: Add an accessible "← Back to orders" link (`buttonVariants` ghost/sm with inline SVG arrow) above the wizard header in `src/app/(dashboard)/orders/new/page.tsx`.
+6. **New Order Button Icon**: Add an inline "+" SVG (`h-4 w-4`, `aria-hidden`) inside the "New order" button in `src/app/(dashboard)/orders/page.tsx`.
+
+### 2. Implementation Decisions & Fixes Applied
+
+- **Shared Action Bar & Bottom Padding**: Wrapped wizard content in a flex container with `min-h-[calc(100vh-14rem)] flex flex-col`. The step content area receives `pb-24`, while the action bar sits at `sticky bottom-0 z-10 border-t border-border bg-surface py-4 px-4 sm:px-6 shadow-sm`. Across all tested breakpoints (375, 768, 1280, 1920px), the bar satisfies `bottom <= innerHeight` without scrolling, and no content is obscured when scrolled to the bottom.
+- **Responsive Stepper Dual-Rendering**: Used Tailwind's responsive visibility (`sm:hidden` vs `hidden sm:block`) to cleanly swap between the compact single-line mobile stepper and the full 3-card desktop layout.
+- **Scroll-Stable Validation Alert**: Eliminated top summary alerts that previously shifted page scroll. Form subscriptions monitor changes and reset `errorCount` to 0 the moment fields become valid. Blocked Next moves focus directly to the first invalid control (`#customer-select` or `input[name="items.0.quantity"]`) with `scrollDelta = 0`.
+- **Toaster Theming & SVG Icons**: Updated `src/components/ui/toaster.tsx` with Sonner `icons` prop and scoped `data-[type=default]:bg-surface data-[type=default]:text-foreground` so `data-[type=success]` and `data-[type=error]` render pure design system tokens (`bg-success-muted text-success-muted-foreground` and `bg-destructive-muted text-destructive-muted-foreground`) without specificity collisions.
+
+### 3. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (0 type errors).
+- `pnpm lint`: Exit code 0 (0 errors, 1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled successfully).
+- Scoped `prettier --check`: Exit code 0.
+- `git diff --check`: Exit code 0.
+- `git diff --cached`: Clean (0 staged files).
+- **Playwright Evidence Suite (`output/playwright/session-14-r2/`)**:
+  - `mobile-stepper-375px.png`: Compact one-row stepper rendering within 375px viewport.
+  - `nav-back-to-orders.png` & `nav-new-order-button.png`: Navigation links with inline arrow and plus SVGs.
+  - `blocked-next-step1.png` & `blocked-next-step2.png`: `scrollDelta: 0`, active element focused, action bar ICU plural message displayed.
+  - `toast-success-light.png`, `toast-error-light.png`, `toast-success-dark.png`, `toast-error-dark.png`: Semantic toast icons and background colors verified in both themes.
+  - `item5-replay-success.png`, `item6-replay-rollback.png`, `item7-replay-success.png`: Core mutation and retry flow re-verified with identical request counts and idempotency key match.
+  - `results.json`: Full machine-readable test execution report.
