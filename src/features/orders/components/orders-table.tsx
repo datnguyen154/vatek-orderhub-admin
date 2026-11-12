@@ -12,6 +12,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { type Order, type OrderStatus, isOptimisticOrder } from "../types";
 import { Badge } from "@/components/ui/badge";
@@ -152,7 +153,12 @@ export function OrdersTable({
                         {t("saving")}
                       </Badge>
                     ) : (
-                      order.orderCode
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-sm"
+                      >
+                        {order.orderCode}
+                      </Link>
                     )}
                   </td>
                   <td className="py-3 px-4 text-body text-foreground whitespace-nowrap">

@@ -14,7 +14,7 @@ import { mockOrders } from "./data/orders";
 import { mockCustomers } from "./data/customers";
 import { mockProducts } from "./data/products";
 import { hasPermission, type Role } from "@/features/auth/types";
-import type { Order } from "@/features/orders/types";
+import type { Order, OrderDetail, OrderStatus } from "@/features/orders/types";
 import {
   createOrderSchema,
   calculateOrderTotals,
@@ -27,11 +27,12 @@ export const DEFAULT_PAGE_SIZE = 5;
 // Tracks first token seen under expire-once scenario
 let expireOnceFirstToken: string | null = null;
 
-// Module-level in-memory storage for created orders (resets on full page reload)
-export const createdOrders: Order[] = [];
+// Module-level in-memory storage for orders (resets on full page reload)
+export const inMemoryOrders: OrderDetail[] = [...mockOrders];
+export const createdOrders: OrderDetail[] = [];
 
 // Module-level idempotency cache for created orders
-const completedOrdersByIdempotency = new Map<string, Order>();
+const completedOrdersByIdempotency = new Map<string, OrderDetail>();
 
 // Tracks keys failed once under fail-once scenario
 const failOnceSeenKeys = new Set<string>();
@@ -253,7 +254,7 @@ export const handlers = [
     const nextIndex = 10 + createdOrders.length + 1;
     const orderCode = `ORD-2026-${String(nextIndex).padStart(3, "0")}`;
 
-    const newOrder: Order = {
+    const newOrder: OrderDetail = {
       id: `ord_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       orderCode,
       customerName: customer.name,
@@ -262,9 +263,20 @@ export const handlers = [
       currency: "USD",
       status: "pending",
       itemCount,
+      poNumber: poNumber?.trim() || null,
+      invoice: null,
+      timeline: [
+        {
+          id: `evt_${Date.now()}_0`,
+          type: "created",
+          at: new Date().toISOString(),
+          actorRole: authResult.role,
+        },
+      ],
     };
 
     createdOrders.unshift(newOrder);
+    inMemoryOrders.unshift(newOrder);
     completedOrdersByIdempotency.set(idempotencyKey, newOrder);
 
     await delay(1200);
@@ -347,8 +359,8 @@ export const handlers = [
         DEFAULT_PAGE_SIZE
     );
 
-    // Merge in-memory created orders with standard mockOrders
-    let filtered = [...createdOrders, ...mockOrders];
+    // In-memory order store
+    let filtered = [...inMemoryOrders];
 
     // 1. Status filter (if provided and not "all" or empty)
     if (statusParam && statusParam !== "all" && statusParam !== "") {
@@ -400,5 +412,180 @@ export const handlers = [
       },
       { status: 200 }
     );
+  }),
+
+  // GET /api/orders/:orderId
+  http.get("/api/orders/:orderId", async ({ request, params }) => {
+    const url = new URL(request.url);
+    const authResult = authenticateRequest(request, url);
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
+    const { orderId } = params;
+    const order = inMemoryOrders.find((o) => o.id === orderId);
+    if (!order) {
+      return HttpResponse.json({ code: "not_found" }, { status: 404 });
+    }
+
+    return HttpResponse.json({ data: order }, { status: 200 });
+  }),
+
+  // PATCH /api/orders/:orderId/status
+  http.patch("/api/orders/:orderId/status", async ({ request, params }) => {
+    const url = new URL(request.url);
+    const authResult = authenticateRequest(request, url);
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
+    if (!hasPermission(authResult.role, "orders:updateStatus")) {
+      return HttpResponse.json({ code: "forbidden" }, { status: 403 });
+    }
+
+    const { orderId } = params;
+    const order = inMemoryOrders.find((o) => o.id === orderId);
+    if (!order) {
+      return HttpResponse.json({ code: "not_found" }, { status: 404 });
+    }
+
+    let statusScenario: string | null = request.headers.get("x-mock-status");
+    if (!statusScenario && typeof window !== "undefined") {
+      try {
+        statusScenario =
+          window.localStorage?.getItem("orderhub_mock_status") || null;
+      } catch {
+        statusScenario = null;
+      }
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return HttpResponse.json({ code: "invalid_payload" }, { status: 400 });
+    }
+
+    const rawStatus = (body as Record<string, unknown>)?.status;
+    if (typeof rawStatus !== "string") {
+      return HttpResponse.json({ code: "invalid_payload" }, { status: 400 });
+    }
+    const newStatus = rawStatus as OrderStatus;
+
+    // Allowed transitions:
+    // pending -> processing or cancelled
+    // processing -> shipped or cancelled
+    // shipped -> delivered
+    // delivered and cancelled are terminal
+    const currentStatus = order.status;
+    const isValidTransition =
+      (currentStatus === "pending" &&
+        (newStatus === "processing" || newStatus === "cancelled")) ||
+      (currentStatus === "processing" &&
+        (newStatus === "shipped" || newStatus === "cancelled")) ||
+      (currentStatus === "shipped" && newStatus === "delivered");
+
+    if (!isValidTransition) {
+      return HttpResponse.json({ code: "invalid_transition" }, { status: 409 });
+    }
+
+    if (statusScenario === "fail") {
+      await delay(800);
+      return HttpResponse.json(
+        { code: "status_update_failed" },
+        { status: 500 }
+      );
+    }
+
+    await delay(800);
+
+    order.status = newStatus;
+    order.timeline.push({
+      id: `evt_${Date.now()}_status`,
+      type: "status_changed",
+      at: new Date().toISOString(),
+      actorRole: authResult.role,
+      fromStatus: currentStatus,
+      toStatus: newStatus,
+    });
+
+    return HttpResponse.json({ data: order }, { status: 200 });
+  }),
+
+  // POST /api/orders/:orderId/invoice
+  http.post("/api/orders/:orderId/invoice", async ({ request, params }) => {
+    const url = new URL(request.url);
+    const authResult = authenticateRequest(request, url);
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
+    if (!hasPermission(authResult.role, "orders:uploadInvoice")) {
+      return HttpResponse.json({ code: "forbidden" }, { status: 403 });
+    }
+
+    const { orderId } = params;
+    const order = inMemoryOrders.find((o) => o.id === orderId);
+    if (!order) {
+      return HttpResponse.json({ code: "not_found" }, { status: 404 });
+    }
+
+    let uploadScenario: string | null = request.headers.get("x-mock-upload");
+    if (!uploadScenario && typeof window !== "undefined") {
+      try {
+        uploadScenario =
+          window.localStorage?.getItem("orderhub_mock_upload") || null;
+      } catch {
+        uploadScenario = null;
+      }
+    }
+
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return HttpResponse.json({ code: "invalid_form_data" }, { status: 400 });
+    }
+
+    const file = formData.get("file");
+    if (!file || !(file instanceof File)) {
+      return HttpResponse.json({ code: "invalid_file" }, { status: 400 });
+    }
+
+    if (
+      file.type !== "application/pdf" &&
+      !file.name.toLowerCase().endsWith(".pdf")
+    ) {
+      return HttpResponse.json({ code: "unsupported_type" }, { status: 415 });
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return HttpResponse.json({ code: "file_too_large" }, { status: 413 });
+    }
+
+    if (uploadScenario === "fail") {
+      await delay(600);
+      return HttpResponse.json({ code: "upload_failed" }, { status: 500 });
+    }
+
+    await delay(600);
+
+    const invoice = {
+      fileName: file.name,
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+    };
+
+    order.invoice = invoice;
+    order.timeline.push({
+      id: `evt_${Date.now()}_invoice`,
+      type: "invoice_uploaded",
+      at: invoice.uploadedAt,
+      actorRole: authResult.role,
+      fileName: file.name,
+    });
+
+    return HttpResponse.json({ data: invoice }, { status: 201 });
   }),
 ];

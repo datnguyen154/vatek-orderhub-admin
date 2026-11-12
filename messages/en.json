@@ -228,6 +228,80 @@
         "noPermission": "You do not have permission to create orders.",
         "reviewAndRetry": "Review and retry"
       }
+    },
+    "detail": {
+      "backToOrders": "Back to orders",
+      "title": "Order Details",
+      "loading": "Loading order details...",
+      "retry": "Retry",
+      "errorTitle": "Unable to load order",
+      "errorDescription": "An error occurred while retrieving order details. Please try again.",
+      "notFoundTitle": "Order Not Found",
+      "notFoundDescription": "The requested order could not be found or does not exist.",
+      "summary": {
+        "title": "Order Summary",
+        "orderCode": "Order Code",
+        "customer": "Customer",
+        "createdAt": "Order Date",
+        "total": "Total Amount",
+        "itemCount": "Item Count",
+        "poNumber": "PO Number",
+        "noPo": "—"
+      },
+      "statusControl": {
+        "title": "Fulfillment Status",
+        "label": "Change Status",
+        "selectLabel": "Next Status",
+        "submitButton": "Update status",
+        "submitting": "Updating...",
+        "terminalNotice": "No further status changes",
+        "readOnlyNotice": "Read-only access (status update requires staff or admin role)",
+        "confirmCancelTitle": "Cancel Order Confirmation",
+        "confirmCancelDescription": "Are you sure you want to cancel order {code}? This action cannot be undone.",
+        "confirmCancelWarning": "The order will be permanently marked as cancelled and cannot be reopened.",
+        "confirmCancelButton": "Yes, cancel order",
+        "dismissCancelButton": "Keep order",
+        "toastSuccess": "Order status updated to {status}",
+        "toastError": "Failed to update order status. Please try again.",
+        "toastForbidden": "You do not have permission to update order status.",
+        "toastInvalid": "Invalid status transition for this order."
+      },
+      "invoice": {
+        "title": "Invoice Document",
+        "noInvoice": "No invoice uploaded yet",
+        "fileName": "File name",
+        "fileSize": "File size",
+        "uploadedAt": "Uploaded at",
+        "uploadLabel": "Upload invoice (PDF, max 5 MB)",
+        "fileInputLabel": "Select PDF invoice",
+        "uploadButton": "Upload",
+        "cancelButton": "Cancel",
+        "retryButton": "Retry upload",
+        "uploading": "Uploading... {percent}%",
+        "uploadCancelled": "Upload was cancelled",
+        "uploadFailed": "Invoice upload failed. Please try again.",
+        "uploadSuccess": "Invoice uploaded successfully",
+        "errorType": "Only PDF documents are supported",
+        "errorSize": "File size exceeds the 5 MB limit",
+        "readOnlyNotice": "Upload requires staff or admin role",
+        "liveAnnounceStart": "Invoice upload started",
+        "liveAnnounceComplete": "Invoice upload completed",
+        "liveAnnounceCancel": "Invoice upload cancelled",
+        "liveAnnounceError": "Invoice upload failed"
+      },
+      "timeline": {
+        "title": "Activity Timeline",
+        "empty": "No timeline events recorded",
+        "eventCreated": "Order created",
+        "eventStatusChanged": "Status changed from {from} to {to}",
+        "eventInvoiceUploaded": "Invoice uploaded: {fileName}",
+        "actors": {
+          "system": "System",
+          "admin": "Admin",
+          "staff": "Staff",
+          "viewer": "Viewer"
+        }
+      }
     }
   },
   "preferences": {

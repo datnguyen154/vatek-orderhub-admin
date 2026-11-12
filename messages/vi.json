@@ -228,6 +228,80 @@
         "noPermission": "Bạn không có quyền tạo đơn hàng.",
         "reviewAndRetry": "Xem lại và thử lại"
       }
+    },
+    "detail": {
+      "backToOrders": "Quay lại danh sách đơn hàng",
+      "title": "Chi tiết đơn hàng",
+      "loading": "Đang tải chi tiết đơn hàng...",
+      "retry": "Thử lại",
+      "errorTitle": "Không thể tải đơn hàng",
+      "errorDescription": "Đã xảy ra lỗi khi truy xuất thông tin đơn hàng. Vui lòng thử lại.",
+      "notFoundTitle": "Không tìm thấy đơn hàng",
+      "notFoundDescription": "Đơn hàng yêu cầu không tồn tại hoặc đã bị xóa.",
+      "summary": {
+        "title": "Tổng quan đơn hàng",
+        "orderCode": "Mã đơn hàng",
+        "customer": "Khách hàng",
+        "createdAt": "Ngày đặt",
+        "total": "Tổng tiền",
+        "itemCount": "Số lượng mặt hàng",
+        "poNumber": "Số đơn mua hàng (PO)",
+        "noPo": "—"
+      },
+      "statusControl": {
+        "title": "Trạng thái thực hiện",
+        "label": "Đổi trạng thái",
+        "selectLabel": "Trạng thái kế tiếp",
+        "submitButton": "Cập nhật trạng thái",
+        "submitting": "Đang cập nhật...",
+        "terminalNotice": "Không thể đổi trạng thái tiếp theo",
+        "readOnlyNotice": "Chỉ xem (cần quyền nhân viên hoặc quản trị viên để cập nhật)",
+        "confirmCancelTitle": "Xác nhận hủy đơn hàng",
+        "confirmCancelDescription": "Bạn có chắc chắn muốn hủy đơn hàng {code}? Thao tác này không thể hoàn tác.",
+        "confirmCancelWarning": "Đơn hàng sẽ chuyển sang trạng thái đã hủy vĩnh viễn và không thể mở lại.",
+        "confirmCancelButton": "Hủy đơn hàng",
+        "dismissCancelButton": "Giữ lại đơn",
+        "toastSuccess": "Đã cập nhật trạng thái đơn thành {status}",
+        "toastError": "Cập nhật trạng thái thất bại. Vui lòng thử lại.",
+        "toastForbidden": "Bạn không có quyền cập nhật trạng thái đơn hàng.",
+        "toastInvalid": "Chuyển trạng thái không hợp lệ cho đơn hàng này."
+      },
+      "invoice": {
+        "title": "Tài liệu hóa đơn",
+        "noInvoice": "Chưa có hóa đơn nào được tải lên",
+        "fileName": "Tên tệp",
+        "fileSize": "Kích thước tệp",
+        "uploadedAt": "Thời gian tải lên",
+        "uploadLabel": "Tải lên hóa đơn (PDF, tối đa 5 MB)",
+        "fileInputLabel": "Chọn tệp hóa đơn PDF",
+        "uploadButton": "Tải lên",
+        "cancelButton": "Hủy",
+        "retryButton": "Thử lại tải lên",
+        "uploading": "Đang tải lên... {percent}%",
+        "uploadCancelled": "Đã hủy tải lên",
+        "uploadFailed": "Tải lên hóa đơn thất bại. Vui lòng thử lại.",
+        "uploadSuccess": "Tải lên hóa đơn thành công",
+        "errorType": "Chỉ hỗ trợ tệp định dạng PDF",
+        "errorSize": "Kích thước tệp vượt quá giới hạn 5 MB",
+        "readOnlyNotice": "Chỉ xem (cần quyền nhân viên hoặc quản trị viên để tải lên)",
+        "liveAnnounceStart": "Bắt đầu tải lên hóa đơn",
+        "liveAnnounceComplete": "Tải lên hóa đơn hoàn tất",
+        "liveAnnounceCancel": "Đã hủy tải lên hóa đơn",
+        "liveAnnounceError": "Tải lên hóa đơn thất bại"
+      },
+      "timeline": {
+        "title": "Lịch sử hoạt động",
+        "empty": "Chưa có sự kiện nào được ghi nhận",
+        "eventCreated": "Đơn hàng được tạo",
+        "eventStatusChanged": "Đổi trạng thái từ {from} sang {to}",
+        "eventInvoiceUploaded": "Đã tải lên hóa đơn: {fileName}",
+        "actors": {
+          "system": "Hệ thống",
+          "admin": "Quản trị viên",
+          "staff": "Nhân viên",
+          "viewer": "Người xem"
+        }
+      }
     }
   },
   "preferences": {
