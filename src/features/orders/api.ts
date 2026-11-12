@@ -1,11 +1,22 @@
 /**
  * OrderHub Admin Console — Orders Feature API
  *
- * Provides typed data fetching functions for orders using the shared API client.
+ * Provides typed data fetching and mutation functions for orders, customers,
+ * and products using the shared API client.
  */
 
 import { apiClient } from "@/lib/api/client";
-import { isOrdersResponse, type OrdersResponse } from "./types";
+import {
+  isOrdersResponse,
+  isCustomersResponse,
+  isProductsResponse,
+  isCreateOrderResponse,
+  type OrdersResponse,
+  type CustomersResponse,
+  type ProductsResponse,
+  type CreateOrderInput,
+  type CreateOrderResponse,
+} from "./types";
 
 export interface GetOrdersOptions {
   signal?: AbortSignal;
@@ -61,5 +72,50 @@ export async function getOrders(
       ? { "x-mock-scenario": options.scenario }
       : undefined,
     validate: isOrdersResponse,
+  });
+}
+
+/**
+ * Fetches customer fixtures from `/api/customers`.
+ */
+export async function getCustomers(
+  options: { signal?: AbortSignal } = {}
+): Promise<CustomersResponse> {
+  return apiClient<CustomersResponse>("/api/customers", {
+    signal: options.signal,
+    validate: isCustomersResponse,
+  });
+}
+
+/**
+ * Fetches product fixtures from `/api/products`.
+ */
+export async function getProducts(
+  options: { signal?: AbortSignal } = {}
+): Promise<ProductsResponse> {
+  return apiClient<ProductsResponse>("/api/products", {
+    signal: options.signal,
+    validate: isProductsResponse,
+  });
+}
+
+/**
+ * Submits a new order to `POST /api/orders`.
+ */
+export async function createOrder(
+  input: CreateOrderInput,
+  options: { signal?: AbortSignal; createScenario?: string } = {}
+): Promise<CreateOrderResponse> {
+  return apiClient<CreateOrderResponse>("/api/orders", {
+    method: "POST",
+    body: JSON.stringify(input),
+    signal: options.signal,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.createScenario
+        ? { "x-mock-create": options.createScenario }
+        : {}),
+    },
+    validate: isCreateOrderResponse,
   });
 }

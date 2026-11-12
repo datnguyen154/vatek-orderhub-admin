@@ -83,6 +83,7 @@
     "clearFilters": "Clear filters",
     "refresh": "Refresh",
     "updating": "Updating orders...",
+    "createButton": "New order",
     "filters": {
       "searchLabel": "Order Code Search",
       "searchPlaceholder": "e.g. ORD-2026-001",
@@ -119,7 +120,114 @@
       "page": "Page",
       "pageOf": "of",
       "prevAria": "Go to previous page",
-      "nextAria": "Go to next page"
+      "nextAria": "Go to next page",
+      "saving": "Saving…"
+    },
+    "create": {
+      "title": "Create Order",
+      "description": "Create a new customer order with line items and discounts.",
+      "loading": "Loading wizard...",
+      "backToOrders": "Back to orders",
+      "fieldsAttention": "{count, plural, one {# field needs attention} other {# fields need attention}}",
+      "stepper": {
+        "navAria": "Create order step navigation",
+        "step1Label": "Step 1 of 3",
+        "step1Title": "Customer",
+        "step2Label": "Step 2 of 3",
+        "step2Title": "Line items",
+        "step3Label": "Step 3 of 3",
+        "step3Title": "Review",
+        "statusCurrent": "Current",
+        "statusCompleted": "Completed",
+        "statusUpcoming": "Upcoming"
+      },
+      "noPermission": {
+        "title": "Access Restricted",
+        "description": "Your current role does not have permission to create orders.",
+        "backToOrders": "Back to orders"
+      },
+      "customerStep": {
+        "heading": "Step 1: Customer details",
+        "subheading": "Select a customer account and provide an optional purchase order reference.",
+        "customerLabel": "Customer",
+        "selectPlaceholder": "Select a customer...",
+        "poNumberLabel": "PO Number (optional)",
+        "poNumberPlaceholder": "e.g. PO-2026-001",
+        "loadingCustomers": "Loading customers list...",
+        "loadError": "Failed to load customers list.",
+        "retry": "Retry loading",
+        "next": "Continue to line items"
+      },
+      "itemsStep": {
+        "heading": "Step 2: Line items",
+        "subheading": "Search catalog products and specify quantities and applicable discounts.",
+        "searchLabel": "Search products",
+        "searchPlaceholder": "Search by product name or SKU...",
+        "resultsFound": "{count} products found",
+        "addProduct": "Add",
+        "addProductAria": "Add {name} to order",
+        "selectedItemsHeading": "Order Line Items",
+        "emptyItems": "No items added yet. Search and add products above.",
+        "table": {
+          "product": "Product",
+          "price": "Unit Price",
+          "quantity": "Quantity",
+          "discount": "Discount (%)",
+          "lineTotal": "Line Total"
+        },
+        "remove": "Remove",
+        "removeAria": "Remove {name} from order",
+        "loadingProducts": "Loading products...",
+        "loadError": "Failed to load products list.",
+        "back": "Back to customer",
+        "next": "Continue to review"
+      },
+      "reviewStep": {
+        "heading": "Step 3: Review and submit",
+        "subheading": "Review customer details, items, discounts, and order totals before submitting.",
+        "customerSection": "Customer Information",
+        "editCustomer": "Edit customer",
+        "customerName": "Customer Name",
+        "customerEmail": "Email",
+        "poNumber": "PO Number",
+        "none": "None",
+        "itemsSection": "Order Items",
+        "editItems": "Edit items",
+        "table": {
+          "product": "Product",
+          "price": "Unit Price",
+          "quantity": "Quantity",
+          "discount": "Discount",
+          "lineTotal": "Line Total"
+        },
+        "subtotal": "Subtotal",
+        "discount": "Discount",
+        "total": "Total Amount",
+        "back": "Back to items",
+        "submit": "Submit order",
+        "submitting": "Submitting order..."
+      },
+      "validation": {
+        "summaryHeading": "Please resolve the following errors:",
+        "customerRequired": "Customer selection is required",
+        "poNumberMax": "PO number must not exceed 40 characters",
+        "itemsMin": "At least 1 product line is required",
+        "itemsMax": "Cannot exceed 20 product lines",
+        "productRequired": "Product selection is required",
+        "duplicateProduct": "This product has already been added to the order",
+        "quantityMin": "Quantity must be at least 1",
+        "quantityMax": "Quantity cannot exceed 999",
+        "quantityInteger": "Quantity must be a whole integer",
+        "discountMin": "Discount cannot be less than 0%",
+        "discountMax": "Discount cannot exceed 50%",
+        "discountInteger": "Discount must be an integer from 0 to 50"
+      },
+      "toast": {
+        "success": "Order {code} created",
+        "error": "Failed to create order. Please try again.",
+        "noPermission": "You do not have permission to create orders.",
+        "reviewAndRetry": "Review and retry"
+      }
     }
   },
   "preferences": {

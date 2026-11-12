@@ -149,16 +149,26 @@ To comply with the requirement that previous-page data must never produce a misl
 - When the query key changes (due to page change or filter change), `placeholderData` returns `undefined`. This triggers the skeleton loading state for the newly selected page rather than showing stale rows from the previous page with the new page indicator.
 - When refetching the exact same query key (e.g., clicking "Refresh" or background refetch), `placeholderData` retains the current data while `isFetching` indicates background activity.
 
-### 3.4. Future Invalidation Contract (Session 14 & 15)
-
-Later Week 3 tasks introduce mutation operations:
+### 3.4. Cache Invalidation & Optimistic Mutation Contract (Session 14 / D13)
 
 1. **Create Order Wizard (Session 14 / D13 / step-16)**:
-   - On successful order creation, the mutation must invalidate the Orders list cache via:
-     ```typescript
-     queryClient.invalidateQueries({ queryKey: ["orders"] });
-     ```
-   - This ensures the newly created order appears on Page 1 upon return to `/orders`.
+   - **Optimistic Insert (`onMutate`)**:
+     - Cancels active queries: `queryClient.cancelQueries({ queryKey: ["orders"] })`.
+     - Snapshots existing queries: `queryClient.getQueriesData({ queryKey: ["orders"] })`.
+     - Builds an optimistic `Order`: `id: "tmp_<key>"`, `orderCode: "ORD-PENDING"`, `status: "pending"`, totals from `calculateOrderTotals` in integer cents, and `createdAt` set to now.
+     - Prepends that order to every cached orders query that is page 1, has no search, no date filters, `status` null or `"pending"`, and no scenario. Increments `total + 1`, recomputes `totalPages`, and trims `data` to `pageSize`.
+     - Leaves all other queries untouched.
+   - **Rollback on Error (`onError`)**:
+     - Restores every cached query snapshot with `setQueryData`. The result equals the snapshot exactly.
+     - Does not invalidate queries.
+     - Stores failed form values and key in module memory (`savedDraft`).
+     - Shows localized error toast with action "Review and retry" linking to `/orders/new?resume=1`.
+     - On 403 Forbidden, shows a localized "no permission" toast instead.
+   - **Success (`onSuccess`)**:
+     - Replaces the `tmp_` row with the authoritative server order in patched queries.
+     - Clears the saved draft.
+     - Shows success toast ("Order {code} created").
+     - Calls `queryClient.invalidateQueries({ queryKey: ["orders"] })` to re-synchronize backend state.
 2. **Order Status Change (Session 15 / D14 / step-17)**:
    - On status transition (e.g. pending -> processing), the mutation must invalidate:
      ```typescript
@@ -341,3 +351,109 @@ Roles are resolved from demo fixture emails in `src/mocks/data/auth.ts`:
 - **Unsigned Access Tokens**: Demo access tokens are simple strings with TTL metadata and random salt. They are designed for client-side MSW verification and capstone flow demonstration, **not production authentication**.
 - **No Password Fixtures**: The application stores no user passwords. Any 8+ character password is accepted during login validation and immediately discarded.
 - **Client UI Hiding vs. Authorization Boundary**: Hiding navigation items or actions in the UI is an ergonomic affordance, **not authorization**. Future backend/MSW mutations must enforce 403 Forbidden responses on the server side for disallowed roles regardless of client state.
+
+---
+
+## 10. Create Order (demo) Architecture & Contract
+
+OrderHub Admin Console implements an approved multi-step Create Order wizard with optimistic cache mutation, exact rollback, and idempotency handling (Session 14 / step-16 / D13):
+
+### 10.1. Endpoints Specification
+
+#### 1. `GET /api/customers`
+
+- **Method**: `GET`
+- **Description**: Returns the list of 6 deterministic customer fixtures.
+- **Headers**: Requires valid `Authorization: Bearer <token>` (same auth rules as `GET /api/orders`).
+- **Response**: `200 OK`
+  ```json
+  {
+    "data": [
+      {
+        "id": "cus_001",
+        "name": "Acme Logistics Inc.",
+        "email": "billing@acmelogistics.example"
+      }
+    ]
+  }
+  ```
+
+#### 2. `GET /api/products`
+
+- **Method**: `GET`
+- **Description**: Returns 12 deterministic product fixtures with unit prices in USD (at most 2 decimals).
+- **Headers**: Requires valid `Authorization: Bearer <token>`.
+- **Response**: `200 OK`
+  ```json
+  {
+    "data": [
+      {
+        "id": "prd_001",
+        "sku": "SKU-PLT-001",
+        "name": "Heavy Duty Wooden Pallet",
+        "unitPrice": 45.0
+      }
+    ]
+  }
+  ```
+
+#### 3. `POST /api/orders`
+
+- **Method**: `POST`
+- **Description**: Validates and creates a new order record.
+- **Headers**:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <token>`
+  - `x-mock-create?: "success" | "fail" | "fail-once"`
+- **Request Body**:
+  ```json
+  {
+    "idempotencyKey": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "customerId": "cus_001",
+    "poNumber": "PO-2026-001",
+    "items": [
+      {
+        "productId": "prd_001",
+        "quantity": 2,
+        "discountPercent": 10
+      }
+    ]
+  }
+  ```
+- **Responses & Error Codes**:
+  - `201 Created`: Order created successfully. Returns `{ data: Order }` with next `ORD-2026-0NN` code, `status: "pending"`, `currency: "USD"`, recomputed integer-cent totals, and timestamp.
+  - `200 OK`: Idempotent repeat. If the exact same `idempotencyKey` is received after an earlier success, returns the previously created order without duplicating.
+  - `400 Bad Request`: `{ code: "validation_error" }`. Triggered if unknown customer, unknown product, or schema validation failure (e.g. invalid quantity, discount > 50, duplicate line items).
+  - `401 Unauthorized`: `{ code: "token_expired" }`. Missing or expired Bearer token.
+  - `403 Forbidden`: `{ code: "forbidden" }`. Role lacks `orders:create` permission (e.g. `viewer` role).
+  - `500 Internal Server Error`: `{ code: "create_failed" }`. Triggered when create scenario evaluates to `fail` or `fail-once` (first attempt).
+
+### 10.2. Totals Calculation in Integer Cents
+
+Server and client calculate line totals and financial summaries using identical integer cents logic:
+
+- `unitPriceCents = round(unitPrice * 100)`
+- `lineGrossCents = unitPriceCents * quantity`
+- `lineTotalCents = round(unitPriceCents * quantity * (100 - discountPercent) / 100)`
+- `subtotal = sum(lineGrossCents) / 100`
+- `total = sum(lineTotalCents) / 100`
+- `discount = subtotal - total`
+
+### 10.3. Idempotency & Create Scenarios
+
+1. **Idempotency**:
+   - The wizard creates `idempotencyKey = crypto.randomUUID()` once per wizard instance.
+   - On submission failure, the key is preserved in module memory so a subsequent retry sends the same key.
+   - MSW stores completed orders in `completedOrdersByIdempotency`. A repeated key returns `200 OK` with the existing order and creates zero duplicate rows.
+2. **Create Scenarios**:
+   - Triggered via `x-mock-create` header first, then `localStorage.orderhub_mock_create`.
+   - `success` (default): proceeds to order creation.
+   - `fail`: unconditionally returns `500 { code: "create_failed" }`.
+   - `fail-once`: fails the first attempt for a given `idempotencyKey` with `500`, and allows the second attempt with the same key to succeed.
+3. **Latency**: Every POST introduces a deterministic `1200ms` delay to allow visual inspection of the optimistic saving state in the UI.
+
+### 10.4. In-Memory Persistence & Reload Reset
+
+- Created orders are held in a module-level array `createdOrders` within MSW handlers.
+- `GET /api/orders` merges `[...createdOrders, ...mockOrders]` before applying active filters, search, and pagination.
+- Performing a full browser page reload flushes the JavaScript runtime memory, returning the Orders list to the original 10 deterministic fixtures.
