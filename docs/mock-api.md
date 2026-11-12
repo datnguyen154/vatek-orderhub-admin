@@ -457,3 +457,117 @@ Server and client calculate line totals and financial summaries using identical 
 - Created orders are held in a module-level array `createdOrders` within MSW handlers.
 - `GET /api/orders` merges `[...createdOrders, ...mockOrders]` before applying active filters, search, and pagination.
 - Performing a full browser page reload flushes the JavaScript runtime memory, returning the Orders list to the original 10 deterministic fixtures.
+
+---
+
+## 11. Order Detail, Status Updates, Invoice Upload & Audit Timeline (Session 15 / Step-17)
+
+### 11.1. Single In-Memory Order Store (`inMemoryOrders`)
+
+- All order reading and writing operations in MSW handlers utilize a single mutable in-memory array: `inMemoryOrders`.
+- Initialized from `mockOrders` fixtures plus any `createdOrders` added during the session.
+- Both `GET /api/orders` (list) and `GET /api/orders/:orderId` (detail) read from `inMemoryOrders`.
+- Mutations (`PATCH /api/orders/:orderId/status`, `POST /api/orders/:orderId/invoice`) mutate the target order directly in `inMemoryOrders`, so status changes and invoice updates immediately reflect in both list and detail endpoints without cache desynchronization.
+- **Reload Reset**: Flushed and re-initialized from seeded fixtures upon full page reload.
+
+### 11.2. Extended Entity Schema: `OrderDetail` & `TimelineEvent`
+
+```typescript
+export interface InvoiceMetadata {
+  fileName: string;
+  size: number;
+  uploadedAt: string; // ISO 8601
+}
+
+export type TimelineEventType =
+  | "created"
+  | "status_changed"
+  | "invoice_uploaded";
+
+export interface TimelineEvent {
+  id: string;
+  type: TimelineEventType;
+  at: string; // ISO 8601
+  actorRole: Role | "system";
+  fromStatus?: OrderStatus;
+  toStatus?: OrderStatus;
+  fileName?: string;
+}
+
+export interface OrderDetail extends Order {
+  poNumber: string | null;
+  invoice: InvoiceMetadata | null;
+  timeline: TimelineEvent[];
+}
+```
+
+- Seeded fixtures in `src/mocks/data/orders.ts` provide deterministic timelines consistent with their status (e.g. `delivered` orders record sequential `created`, `processing`, `shipped`, and `delivered` events with timestamps following `createdAt`). Seeded fixtures start with `poNumber: null` and `invoice: null`.
+- Orders created via `POST /api/orders` retain their submitted `poNumber`, have `invoice: null`, and record an initial `created` event.
+
+### 11.3. API Contract: `GET /api/orders/:orderId`
+
+- **Method**: `GET`
+- **Endpoint**: `/api/orders/:orderId`
+- **Headers**: Requires valid `Authorization: Bearer <token>`.
+- **Responses**:
+  - `200 OK`: `{ data: OrderDetail }`.
+  - `401 Unauthorized`: `{ code: "token_expired" }` if Bearer token is missing, expired, or malformed.
+  - `404 Not Found`: `{ code: "not_found" }` if `orderId` does not exist in `inMemoryOrders`.
+
+### 11.4. API Contract: `PATCH /api/orders/:orderId/status`
+
+- **Method**: `PATCH`
+- **Endpoint**: `/api/orders/:orderId/status`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <token>`
+  - `x-mock-status?: "success" | "fail"`
+- **Request Body**:
+  ```json
+  {
+    "status": "processing"
+  }
+  ```
+- **Permission Guard**: Requires `orders:updateStatus` permission. Returns `403 Forbidden` (`{ code: "forbidden" }`) for disallowed roles (e.g. `viewer`).
+- **Allowed Transitions**:
+  - `pending` → `processing` or `cancelled`
+  - `processing` → `shipped` or `cancelled`
+  - `shipped` → `delivered`
+  - `delivered` and `cancelled` are terminal states (no further transitions permitted).
+  - Any disallowed or backwards transition returns `409 Conflict` (`{ code: "invalid_transition" }`).
+- **Scenarios & Latency**:
+  - Evaluates `x-mock-status` header, then `localStorage.orderhub_mock_status`.
+  - When scenario is `"fail"`, introduces 800ms delay and returns `500 Internal Server Error` (`{ code: "status_update_failed" }`).
+  - Normal updates introduce a deterministic 800ms delay.
+- **Success (`200 OK`)**:
+  - Updates order status in `inMemoryOrders`.
+  - Appends `{ id, type: "status_changed", at, actorRole, fromStatus, toStatus }` to `order.timeline`.
+  - Returns `200 OK` with updated `{ data: OrderDetail }`.
+
+### 11.5. API Contract: `POST /api/orders/:orderId/invoice`
+
+- **Method**: `POST`
+- **Endpoint**: `/api/orders/:orderId/invoice`
+- **Headers**:
+  - `Authorization: Bearer <token>`
+  - `x-mock-upload?: "success" | "fail"`
+- **Request Body**: `multipart/form-data` with field `file`.
+- **Permission Guard**: Requires `orders:uploadInvoice` permission. Returns `403 Forbidden` (`{ code: "forbidden" }`) for disallowed roles (e.g. `viewer`).
+- **File Restrictions**:
+  - File format must be `application/pdf` (or end with `.pdf`). Violations return `415 Unsupported Media Type` (`{ code: "unsupported_type" }`).
+  - File size cannot exceed 5 MB (5,242,880 bytes). Violations return `413 Payload Too Large` (`{ code: "file_too_large" }`).
+  - Both validations are enforced client-side before sending and verified server-side in MSW.
+- **Scenarios & Latency**:
+  - Evaluates `x-mock-upload` header, then `localStorage.orderhub_mock_upload`.
+  - When scenario is `"fail"`, introduces 600ms delay and returns `500 Internal Server Error` (`{ code: "upload_failed" }`).
+  - Normal uploads introduce a deterministic 600ms delay after parsing the body.
+- **Success (`201 Created`)**:
+  - Replaces any earlier invoice metadata on the order with `{ fileName, size, uploadedAt }`.
+  - Appends `{ id, type: "invoice_uploaded", at, actorRole, fileName }` to `order.timeline`.
+  - Returns `201 Created` with `{ data: { fileName, size, uploadedAt } }`.
+
+### 11.6. Simulation Boundaries & Demo Limits
+
+- This is a capstone educational demo. No physical PDF files are stored on server disk or persisted across process restarts.
+- MSW records only file metadata (`fileName`, `size`, `uploadedAt`).
+- All state resets to deterministic seed fixtures upon browser refresh.

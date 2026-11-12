@@ -256,7 +256,7 @@ function CreateOrderWizardContent() {
   ];
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-14rem)] space-y-6">
+    <div className="flex flex-col space-y-6">
       {/* Mobile Stepper: single horizontal row below sm */}
       <nav aria-label={t("stepper.navAria")} className="sm:hidden">
         <ol className="flex items-center justify-between gap-1 p-2 rounded-lg border border-border bg-surface text-xs">
@@ -269,7 +269,7 @@ function CreateOrderWizardContent() {
                 key={step.number}
                 aria-current={isCurrent ? "step" : undefined}
                 className={cn(
-                  "flex items-center gap-1.5 py-1 px-2 rounded-md transition-colors",
+                  "flex min-w-0 items-center gap-1.5 py-1 px-1.5 rounded-md transition-colors",
                   isCurrent
                     ? "bg-primary-muted/20 text-foreground font-semibold"
                     : isCompleted
@@ -279,7 +279,7 @@ function CreateOrderWizardContent() {
               >
                 <span
                   className={cn(
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                     isCurrent
                       ? "bg-warning-muted text-warning-muted-foreground"
                       : isCompleted
@@ -291,7 +291,7 @@ function CreateOrderWizardContent() {
                 </span>
                 <span className="truncate">{step.title}</span>
                 {isCurrent && (
-                  <span className="text-[10px] uppercase font-bold text-warning ml-0.5">
+                  <span className="sr-only">
                     ({t("stepper.statusCurrent")})
                   </span>
                 )}
@@ -387,77 +387,106 @@ function CreateOrderWizardContent() {
 
       {/* Shared Sticky Action Bar */}
       <div className="sticky bottom-0 z-10 border-t border-border bg-surface py-4 px-4 sm:px-6 rounded-b-lg shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            {currentStep > 1 && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                onClick={() => setCurrentStep((s) => s - 1)}
-                disabled={createOrderMutation.isPending}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          {errorCount > 0 && (
+            <div
+              role="alert"
+              className="sm:hidden flex items-center gap-1.5 text-xs font-semibold text-destructive w-full"
+            >
+              <svg
+                className="h-4 w-4 shrink-0 text-destructive"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
               >
-                {currentStep === 2 ? t("itemsStep.back") : t("reviewStep.back")}
-              </Button>
-            )}
-          </div>
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>{t("fieldsAttention", { count: errorCount })}</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-4">
-            {errorCount > 0 && (
-              <div
-                role="alert"
-                className="flex items-center gap-1.5 text-xs font-semibold text-destructive animate-in fade-in duration-200"
-              >
-                <svg
-                  className="h-4 w-4 shrink-0 text-destructive"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
+          <div className="flex items-center justify-between w-full gap-3 sm:gap-4">
+            <div>
+              {currentStep > 1 && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  className="shrink-0"
+                  onClick={() => setCurrentStep((s) => s - 1)}
+                  disabled={createOrderMutation.isPending}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>{t("fieldsAttention", { count: errorCount })}</span>
-              </div>
-            )}
+                  {currentStep === 2
+                    ? t("itemsStep.back")
+                    : t("reviewStep.back")}
+                </Button>
+              )}
+            </div>
 
-            {currentStep === 1 && (
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                onClick={handleCustomerNext}
-              >
-                {t("customerStep.next")}
-              </Button>
-            )}
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
+              {errorCount > 0 && (
+                <div
+                  role="alert"
+                  className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-destructive"
+                >
+                  <svg
+                    className="h-4 w-4 shrink-0 text-destructive"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{t("fieldsAttention", { count: errorCount })}</span>
+                </div>
+              )}
 
-            {currentStep === 2 && (
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                onClick={handleItemsNext}
-              >
-                {t("itemsStep.next")}
-              </Button>
-            )}
+              {currentStep === 1 && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  className="shrink-0"
+                  onClick={handleCustomerNext}
+                >
+                  {t("customerStep.next")}
+                </Button>
+              )}
 
-            {currentStep === 3 && (
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                onClick={handleReviewSubmit}
-                disabled={createOrderMutation.isPending}
-                loading={createOrderMutation.isPending}
-              >
-                {t("reviewStep.submit")}
-              </Button>
-            )}
+              {currentStep === 2 && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  className="shrink-0"
+                  onClick={handleItemsNext}
+                >
+                  {t("itemsStep.next")}
+                </Button>
+              )}
+
+              {currentStep === 3 && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  className="shrink-0"
+                  onClick={handleReviewSubmit}
+                  disabled={createOrderMutation.isPending}
+                  loading={createOrderMutation.isPending}
+                >
+                  {t("reviewStep.submit")}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

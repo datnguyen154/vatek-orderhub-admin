@@ -5,9 +5,82 @@
  * testing, and MSW response interception.
  */
 
-import type { Order } from "@/features/orders/types";
+import type {
+  OrderDetail,
+  OrderStatus,
+  TimelineEvent,
+} from "@/features/orders/types";
 
-export const mockOrders: readonly Order[] = [
+function generateDeterministicTimeline(
+  id: string,
+  status: OrderStatus,
+  createdAt: string
+): TimelineEvent[] {
+  const baseTime = new Date(createdAt).getTime();
+  const timeline: TimelineEvent[] = [
+    {
+      id: `${id}_evt_0`,
+      type: "created",
+      at: createdAt,
+      actorRole: "system",
+    },
+  ];
+
+  if (status === "pending") {
+    return timeline;
+  }
+
+  if (status === "cancelled") {
+    timeline.push({
+      id: `${id}_evt_1`,
+      type: "status_changed",
+      at: new Date(baseTime + 2 * 3600 * 1000).toISOString(),
+      actorRole: "admin",
+      fromStatus: "pending",
+      toStatus: "cancelled",
+    });
+    return timeline;
+  }
+
+  timeline.push({
+    id: `${id}_evt_1`,
+    type: "status_changed",
+    at: new Date(baseTime + 3600 * 1000).toISOString(),
+    actorRole: "staff",
+    fromStatus: "pending",
+    toStatus: "processing",
+  });
+
+  if (status === "processing") {
+    return timeline;
+  }
+
+  timeline.push({
+    id: `${id}_evt_2`,
+    type: "status_changed",
+    at: new Date(baseTime + 3 * 3600 * 1000).toISOString(),
+    actorRole: "staff",
+    fromStatus: "processing",
+    toStatus: "shipped",
+  });
+
+  if (status === "shipped") {
+    return timeline;
+  }
+
+  timeline.push({
+    id: `${id}_evt_3`,
+    type: "status_changed",
+    at: new Date(baseTime + 24 * 3600 * 1000).toISOString(),
+    actorRole: "staff",
+    fromStatus: "shipped",
+    toStatus: "delivered",
+  });
+
+  return timeline;
+}
+
+export const mockOrders: readonly OrderDetail[] = [
   {
     id: "ord_001",
     orderCode: "ORD-2026-001",
@@ -17,6 +90,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "delivered",
     itemCount: 12,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_001",
+      "delivered",
+      "2026-11-06T10:30:00Z"
+    ),
   },
   {
     id: "ord_002",
@@ -27,6 +107,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "pending",
     itemCount: 4,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_002",
+      "pending",
+      "2026-11-06T14:15:00Z"
+    ),
   },
   {
     id: "ord_003",
@@ -37,6 +124,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "cancelled",
     itemCount: 2,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_003",
+      "cancelled",
+      "2026-11-05T08:45:00Z"
+    ),
   },
   {
     id: "ord_004",
@@ -47,6 +141,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "processing",
     itemCount: 28,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_004",
+      "processing",
+      "2026-11-05T16:20:00Z"
+    ),
   },
   {
     id: "ord_005",
@@ -57,6 +158,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "shipped",
     itemCount: 7,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_005",
+      "shipped",
+      "2026-11-04T11:00:00Z"
+    ),
   },
   {
     id: "ord_006",
@@ -67,6 +175,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "delivered",
     itemCount: 9,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_006",
+      "delivered",
+      "2026-11-04T13:40:00Z"
+    ),
   },
   {
     id: "ord_007",
@@ -77,6 +192,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "processing",
     itemCount: 5,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_007",
+      "processing",
+      "2026-11-03T15:10:00Z"
+    ),
   },
   {
     id: "ord_008",
@@ -87,6 +209,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "shipped",
     itemCount: 16,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_008",
+      "shipped",
+      "2026-11-02T09:25:00Z"
+    ),
   },
   {
     id: "ord_009",
@@ -97,6 +226,13 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "cancelled",
     itemCount: 1,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_009",
+      "cancelled",
+      "2026-11-01T17:05:00Z"
+    ),
   },
   {
     id: "ord_010",
@@ -107,5 +243,12 @@ export const mockOrders: readonly Order[] = [
     currency: "USD",
     status: "delivered",
     itemCount: 14,
+    poNumber: null,
+    invoice: null,
+    timeline: generateDeterministicTimeline(
+      "ord_010",
+      "delivered",
+      "2026-10-31T12:00:00Z"
+    ),
   },
-] as const;
+];

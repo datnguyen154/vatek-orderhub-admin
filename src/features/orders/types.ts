@@ -5,6 +5,8 @@
  * Runtime type guards validate `unknown` JSON data without relying on unsafe type assertions.
  */
 
+import type { Role } from "@/features/auth/types";
+
 export type OrderStatus =
   | "pending"
   | "processing"
@@ -256,4 +258,147 @@ export function isCreateOrderResponse(
   }
   const record = value as Record<string, unknown>;
   return isOrder(record.data);
+}
+
+export interface InvoiceMetadata {
+  fileName: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export type TimelineEventType =
+  | "created"
+  | "status_changed"
+  | "invoice_uploaded";
+
+export interface TimelineEvent {
+  id: string;
+  type: TimelineEventType;
+  at: string;
+  actorRole: Role | "system";
+  fromStatus?: OrderStatus;
+  toStatus?: OrderStatus;
+  fileName?: string;
+}
+
+export interface OrderDetail extends Order {
+  poNumber: string | null;
+  invoice: InvoiceMetadata | null;
+  timeline: TimelineEvent[];
+}
+
+export interface OrderDetailResponse {
+  data: OrderDetail;
+}
+
+export interface UpdateOrderStatusInput {
+  status: OrderStatus;
+}
+
+export interface UpdateOrderStatusResponse {
+  data: OrderDetail;
+}
+
+export interface UploadInvoiceResponse {
+  data: InvoiceMetadata;
+}
+
+export function isInvoiceMetadata(value: unknown): value is InvoiceMetadata {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.fileName === "string" &&
+    record.fileName.trim() !== "" &&
+    typeof record.size === "number" &&
+    !Number.isNaN(record.size) &&
+    typeof record.uploadedAt === "string" &&
+    !Number.isNaN(Date.parse(record.uploadedAt))
+  );
+}
+
+export function isTimelineEvent(value: unknown): value is TimelineEvent {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  if (
+    typeof record.id !== "string" ||
+    typeof record.at !== "string" ||
+    Number.isNaN(Date.parse(record.at)) ||
+    (record.type !== "created" &&
+      record.type !== "status_changed" &&
+      record.type !== "invoice_uploaded")
+  ) {
+    return false;
+  }
+  if (
+    record.actorRole !== "system" &&
+    record.actorRole !== "admin" &&
+    record.actorRole !== "staff" &&
+    record.actorRole !== "viewer"
+  ) {
+    return false;
+  }
+  if (record.fromStatus !== undefined && !isOrderStatus(record.fromStatus)) {
+    return false;
+  }
+  if (record.toStatus !== undefined && !isOrderStatus(record.toStatus)) {
+    return false;
+  }
+  if (record.fileName !== undefined && typeof record.fileName !== "string") {
+    return false;
+  }
+  return true;
+}
+
+export function isOrderDetail(value: unknown): value is OrderDetail {
+  if (!isOrder(value)) {
+    return false;
+  }
+  const record = value as unknown as Record<string, unknown>;
+  if (record.poNumber !== null && typeof record.poNumber !== "string") {
+    return false;
+  }
+  if (record.invoice !== null && !isInvoiceMetadata(record.invoice)) {
+    return false;
+  }
+  if (
+    !Array.isArray(record.timeline) ||
+    !record.timeline.every(isTimelineEvent)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export function isOrderDetailResponse(
+  value: unknown
+): value is OrderDetailResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return isOrderDetail(record.data);
+}
+
+export function isUpdateOrderStatusResponse(
+  value: unknown
+): value is UpdateOrderStatusResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return isOrderDetail(record.data);
+}
+
+export function isUploadInvoiceResponse(
+  value: unknown
+): value is UploadInvoiceResponse {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return isInvoiceMetadata(record.data);
 }
