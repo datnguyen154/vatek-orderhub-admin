@@ -4,6 +4,7 @@
 
 # Next.js and build output
 /.next/
+/.next-*/
 /out/
 /dist/
 /coverage/
@@ -26,8 +27,9 @@ Thumbs.db
 # Test artifacts
 /.playwright-cli/
 /output/
+/test-results/
+/playwright-report/
+/blob-report/
 
 # Codegraph index
 /.codegraph/
-
-

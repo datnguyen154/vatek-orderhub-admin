@@ -18,7 +18,14 @@ const tsParser = require(
 
 const eslintConfig = [
   {
-    ignores: [".next/*", "node_modules/*"],
+    ignores: [
+      ".next/*",
+      ".next-*/**",
+      "node_modules/*",
+      "test-results/**",
+      "playwright-report/**",
+      "blob-report/**",
+    ],
   },
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
