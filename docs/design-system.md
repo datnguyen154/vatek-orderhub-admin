@@ -60,40 +60,40 @@ All design tokens are implemented as CSS custom properties in `src/app/globals.c
 
 ### 3.1. Semantic Color Tokens & Contrast Verification
 
-| Token Name             | Hex Value | RGB Channels (CSS Var) | Purpose & Usage                                                | Contrast vs Background    | Contrast vs Surface       | WCAG Level                              |
-| :--------------------- | :-------- | :--------------------- | :------------------------------------------------------------- | :------------------------ | :------------------------ | :-------------------------------------- |
-| `background`           | `#F8FAFC` | `248 250 252`          | Canvas/body background                                         | —                         | —                         | Baseline                                |
-| `foreground`           | `#0F172A` | `15 23 42`             | Primary high-emphasis body text and headings                   | 17.06:1                   | 17.85:1                   | AAA                                     |
-| `surface`              | `#FFFFFF` | `255 255 255`          | Card panels, data tables, modals, dropdowns                    | 1.05:1 (border delimited) | —                         | Baseline                                |
-| `surface-foreground`   | `#0F172A` | `15 23 42`             | Text inside cards, tables, and dialogs                         | 17.06:1                   | 17.85:1                   | AAA                                     |
-| `muted`                | `#F1F5F9` | `241 245 249`          | Subdued backgrounds, table headers, tag pills                  | 1.05:1                    | 1.10:1                    | Base                                    |
-| `muted-foreground`     | `#475569` | `71 85 105`            | Secondary text, table column labels, helper text               | 6.92:1 (on muted)         | 7.58:1 (on surface)       | AAA (> 7:1)                             |
-| `border`               | `#E2E8F0` | `226 232 240`          | Decorative card dividers, table borders, structural separators | 1.18:1                    | 1.23:1                    | Decorative / structural (non-essential) |
-| `border-hover`         | `#CBD5E1` | `203 213 225`          | Subtle hover on decorative card boundaries or table rows       | 1.42:1                    | 1.48:1                    | Decorative / structural                 |
-| `control-border`       | `#64748B` | `100 116 139`          | Functional input strokes, select borders, button outlines      | 4.55:1                    | 4.76:1                    | Non-text UI (>= 3:1)                    |
-| `control-border-hover` | `#334155` | `51 65 85`             | Hover state for interactive form controls and inputs           | 9.90:1                    | 10.35:1                   | Non-text UI (>= 3:1)                    |
-| `primary`              | `#1D4ED8` | `29 78 216`            | Primary action buttons, active navigation indicator            | 6.41:1                    | 6.70:1                    | UI Component (>= 3:1)                   |
-| `primary-hover`        | `#1E40AF` | `30 64 175`            | Primary action button hover state                              | 8.34:1                    | 8.72:1                    | UI Component                            |
-| `primary-foreground`   | `#FFFFFF` | `255 255 255`          | Text/icons inside primary buttons/badges                       | —                         | 6.70:1 (on primary)       | AA (> 4.5:1)                            |
-| `primary-muted`        | `#DBEAFE` | `219 234 254`          | Subdued primary pill/badge background                          | 1.17:1                    | 1.22:1                    | Badge background                        |
-| `primary-muted-fg`     | `#1E40AF` | `30 64 175`            | Text on subdued primary badge (`primary-muted`)                | —                         | 7.15:1 (on primary-muted) | AAA (> 7:1)                             |
-| `destructive`          | `#DC2626` | `220 38 38`            | Danger actions (Cancel, Delete), error banners                 | 4.62:1                    | 4.83:1                    | UI Component                            |
-| `destructive-hover`    | `#B91C1C` | `185 28 28`            | Hover state for destructive buttons                            | 6.18:1                    | 6.47:1                    | UI Component                            |
-| `destructive-fg`       | `#FFFFFF` | `255 255 255`          | Text/icons on solid destructive buttons                        | —                         | 4.83:1 (on destructive)   | AA (> 4.5:1)                            |
-| `destructive-muted`    | `#FEE2E2` | `254 226 226`          | Light background for error banners / alert badges              | 1.17:1                    | 1.22:1                    | Badge background                        |
-| `destructive-muted-fg` | `#991B1B` | `153 27 27`            | Text on error banners / alert badges                           | —                         | 6.80:1 (on dest-muted)    | AA (> 4.5:1)                            |
-| `success`              | `#15803D` | `21 128 61`            | Completed status, success toast/badge                          | 4.79:1                    | 5.02:1                    | UI Component                            |
-| `success-hover`        | `#166534` | `22 101 52`            | Hover state for success actions                                | 6.81:1                    | 7.13:1                    | UI Component                            |
-| `success-foreground`   | `#FFFFFF` | `255 255 255`          | Text on solid success buttons                                  | —                         | 5.02:1 (on success)       | AA (> 4.5:1)                            |
-| `success-muted`        | `#DCFCE7` | `220 252 231`          | Delivered/Fulfilled status badge background                    | 1.05:1                    | 1.10:1                    | Badge background                        |
-| `success-muted-fg`     | `#166534` | `22 101 52`            | Text on Delivered/Fulfilled status badge                       | —                         | 6.49:1 (on succ-muted)    | AA (> 4.5:1)                            |
-| `warning`              | `#B45309` | `180 83 9`             | Warning action, attention badges                               | 4.80:1                    | 5.02:1                    | UI Component                            |
-| `warning-hover`        | `#92400E` | `146 64 14`            | Hover state for warning actions                                | 6.78:1                    | 7.09:1                    | UI Component                            |
-| `warning-foreground`   | `#FFFFFF` | `255 255 255`          | Text on solid warning buttons                                  | —                         | 5.02:1 (on warning)       | AA (> 4.5:1)                            |
-| `warning-muted`        | `#FEF3C7` | `254 243 199`          | Pending/Processing status badge background                     | 1.06:1                    | 1.11:1                    | Badge background                        |
-| `warning-muted-fg`     | `#92400E` | `146 64 14`            | Text on Pending/Processing status badge                        | —                         | 6.37:1 (on warn-muted)    | AA (> 4.5:1)                            |
-| `focus`                | `#1D4ED8` | `29 78 216`            | `:focus-visible` ring outline (2px solid, 2px offset)          | 6.41:1                    | 6.70:1                    | Non-text UI (>= 3:1)                    |
-| `chart-bar`            | `#1D4ED8` | `29 78 216`            | Bar series fill in analytics charts (`#60A5FA` in dark)        | —                         | 6.70:1 / 5.75:1           | Non-text UI (>= 3:1)                    |
+| Token Name                     | Hex Value | RGB Channels (CSS Var) | Purpose & Usage                                                | Contrast vs Background    | Contrast vs Surface       | WCAG Level                              |
+| :----------------------------- | :-------- | :--------------------- | :------------------------------------------------------------- | :------------------------ | :------------------------ | :-------------------------------------- |
+| `background`                   | `#F8FAFC` | `248 250 252`          | Canvas/body background                                         | —                         | —                         | Baseline                                |
+| `foreground`                   | `#0F172A` | `15 23 42`             | Primary high-emphasis body text and headings                   | 17.06:1                   | 17.85:1                   | AAA                                     |
+| `surface`                      | `#FFFFFF` | `255 255 255`          | Card panels, data tables, modals, dropdowns                    | 1.05:1 (border delimited) | —                         | Baseline                                |
+| `surface-foreground`           | `#0F172A` | `15 23 42`             | Text inside cards, tables, and dialogs                         | 17.06:1                   | 17.85:1                   | AAA                                     |
+| `muted`                        | `#F1F5F9` | `241 245 249`          | Subdued backgrounds, table headers, tag pills                  | 1.05:1                    | 1.10:1                    | Base                                    |
+| `muted-foreground`             | `#475569` | `71 85 105`            | Secondary text, table column labels, helper text               | 6.92:1 (on muted)         | 7.58:1 (on surface)       | AAA (> 7:1)                             |
+| `border`                       | `#E2E8F0` | `226 232 240`          | Decorative card dividers, table borders, structural separators | 1.18:1                    | 1.23:1                    | Decorative / structural (non-essential) |
+| `border-hover`                 | `#CBD5E1` | `203 213 225`          | Subtle hover on decorative card boundaries or table rows       | 1.42:1                    | 1.48:1                    | Decorative / structural                 |
+| `control-border`               | `#64748B` | `100 116 139`          | Functional input strokes, select borders, button outlines      | 4.55:1                    | 4.76:1                    | Non-text UI (>= 3:1)                    |
+| `control-border-hover`         | `#334155` | `51 65 85`             | Hover state for interactive form controls and inputs           | 9.90:1                    | 10.35:1                   | Non-text UI (>= 3:1)                    |
+| `primary`                      | `#1D4ED8` | `29 78 216`            | Primary action buttons, active navigation indicator            | 6.41:1                    | 6.70:1                    | UI Component (>= 3:1)                   |
+| `primary-hover`                | `#1E40AF` | `30 64 175`            | Primary action button hover state                              | 8.34:1                    | 8.72:1                    | UI Component                            |
+| `primary-foreground`           | `#FFFFFF` | `255 255 255`          | Text/icons inside primary buttons/badges                       | —                         | 6.70:1 (on primary)       | AA (> 4.5:1)                            |
+| `primary-muted`                | `#DBEAFE` | `219 234 254`          | Subdued primary pill/badge background                          | 1.17:1                    | 1.22:1                    | Badge background                        |
+| `primary-muted-foreground`     | `#1E40AF` | `30 64 175`            | Text on subdued primary badge (`primary-muted`)                | —                         | 7.15:1 (on primary-muted) | AAA (> 7:1)                             |
+| `destructive`                  | `#DC2626` | `220 38 38`            | Danger actions (Cancel, Delete), error banners                 | 4.62:1                    | 4.83:1                    | UI Component                            |
+| `destructive-hover`            | `#B91C1C` | `185 28 28`            | Hover state for destructive buttons                            | 6.18:1                    | 6.47:1                    | UI Component                            |
+| `destructive-fg`               | `#FFFFFF` | `255 255 255`          | Text/icons on solid destructive buttons                        | —                         | 4.83:1 (on destructive)   | AA (> 4.5:1)                            |
+| `destructive-muted`            | `#FEE2E2` | `254 226 226`          | Light background for error banners / alert badges              | 1.17:1                    | 1.22:1                    | Badge background                        |
+| `destructive-muted-foreground` | `#991B1B` | `153 27 27`            | Text on error banners / alert badges                           | —                         | 6.80:1 (on dest-muted)    | AA (> 4.5:1)                            |
+| `success`                      | `#15803D` | `21 128 61`            | Completed status, success toast/badge                          | 4.79:1                    | 5.02:1                    | UI Component                            |
+| `success-hover`                | `#166534` | `22 101 52`            | Hover state for success actions                                | 6.81:1                    | 7.13:1                    | UI Component                            |
+| `success-foreground`           | `#FFFFFF` | `255 255 255`          | Text on solid success buttons                                  | —                         | 5.02:1 (on success)       | AA (> 4.5:1)                            |
+| `success-muted`                | `#DCFCE7` | `220 252 231`          | Delivered/Fulfilled status badge background                    | 1.05:1                    | 1.10:1                    | Badge background                        |
+| `success-muted-foreground`     | `#166534` | `22 101 52`            | Text on Delivered/Fulfilled status badge                       | —                         | 6.49:1 (on succ-muted)    | AA (> 4.5:1)                            |
+| `warning`                      | `#B45309` | `180 83 9`             | Warning action, attention badges                               | 4.80:1                    | 5.02:1                    | UI Component                            |
+| `warning-hover`                | `#92400E` | `146 64 14`            | Hover state for warning actions                                | 6.78:1                    | 7.09:1                    | UI Component                            |
+| `warning-foreground`           | `#FFFFFF` | `255 255 255`          | Text on solid warning buttons                                  | —                         | 5.02:1 (on warning)       | AA (> 4.5:1)                            |
+| `warning-muted`                | `#FEF3C7` | `254 243 199`          | Pending/Processing status badge background                     | 1.06:1                    | 1.11:1                    | Badge background                        |
+| `warning-muted-foreground`     | `#92400E` | `146 64 14`            | Text on Pending/Processing status badge                        | —                         | 6.37:1 (on warn-muted)    | AA (> 4.5:1)                            |
+| `focus`                        | `#1D4ED8` | `29 78 216`            | `:focus-visible` ring outline (2px solid, 2px offset)          | 6.41:1                    | 6.70:1                    | Non-text UI (>= 3:1)                    |
+| `chart-bar`                    | `#1D4ED8` | `29 78 216`            | Bar series fill in analytics charts (`#60A5FA` in dark)        | —                         | 6.70:1 / 5.75:1           | Non-text UI (>= 3:1)                    |
 
 _Note: All contrast ratios calculated using the standard WCAG relative luminance formula: $L = 0.2126R + 0.7152G + 0.0722B$ and $(L_1 + 0.05) / (L_2 + 0.05)$._
 
@@ -192,7 +192,7 @@ _(Note: These wireframes define the structural and visual contract for upcoming 
 |       | CARD (max-w-md, rounded-lg, border, shadow) |       |
 |       |                                             |       |
 |       |  [text-page-title] Sign in to OrderHub      |       |
-|       |  [text-body text-muted-fg] B2B Admin Access |       |
+|       |  [text-body text-muted-foreground] B2B Admin Access |       |
 |       |                                             |       |
 |       |  LABEL: Email Address                       |       |
 |       |  [ INPUT (h-control-md, rounded-md, border border-control-border) ] |
@@ -204,7 +204,7 @@ _(Note: These wireframes define the structural and visual contract for upcoming 
 |       |  [ BUTTON: primary, w-full, h-control-lg ]  |       |
 |       |    "Sign in to Console"                     |       |
 |       |                                             |       |
-|       |  [text-caption text-muted-fg, text-center]  |       |
+|       |  [text-caption text-muted-foreground, text-center]  |       |
 |       |  Demo Credentials: admin@orderhub.local     |       |
 |       +---------------------------------------------+       |
 |                                                             |
@@ -229,7 +229,7 @@ _(Note: These wireframes define the structural and visual contract for upcoming 
 | (w-sidebar,       |                                                                |
 |  border-r,        |  PAGE HEADER                                                   |
 |  bg-surface,      |  [text-page-title] Orders Management      [Primary Action]     |
-|  py-4, px-3)      |  [text-body text-muted-fg] Manage and fulfill customer orders |
+|  py-4, px-3)      |  [text-body text-muted-foreground] Manage and fulfill customer orders |
 |                   |                                                                |
 |  * Dashboard      |  METRICS / SUMMARY CARDS                                       |
 |  * Orders (active)|  +--------------+ +--------------+ +--------------+            |

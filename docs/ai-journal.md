@@ -2236,3 +2236,72 @@ Codex identified 8 findings from the initial review:
 - `git diff --check`: Exit code 0 (clean diff, zero whitespace errors).
 - Duplicate-export scan: 0 duplicates across all 12 changed `.ts`/`.tsx` files.
 - Playwright R1 Suite: All F1-F8 criteria passed with evidence in `output/playwright/session-16-r1/results.json`.
+
+## Polish 1 — UI/UX Polish Pass & Token Hygiene
+
+- **Date**: 2026-11-13
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `4917062bc39eae39a83e2a092bfeb20e4449152d`
+- **Branch**: `chore/ui-polish`
+
+### 1. Task & Prompt Summary
+
+Execute the `polish-1` task on `orderhub-admin-console` before Session 17 (tests/CI). Implement Part A polish items 1–10 (status control UX, mobile stepper text, design tokens documentation, reduced motion focus scroll, URI encoding for order IDs, semantic HTML5 progress bar, report KPI error dashes vs empty state, delivery milestone updates, toast layout alignment), discover and address Part B UX enhancements (file input focus ring, progress bar accessible announcement, empty search feedback), and verify zero regressions across existing features (viewer gating, rollback, report calculations, console/hydration clean).
+
+### 2. Architecture & Design Choices
+
+- **Deterministic Status Transition Table**: Extracted and exported single source of truth `ORDER_STATUS_TRANSITIONS` in `src/features/orders/types.ts`. Replaced `getAllowedNextStatuses` in `order-status-control.tsx` and the inline transition check in MSW PATCH handler (`src/mocks/handlers.ts`) to eliminate logic duplication while preserving strict transition rules (`pending` -> `processing`/`cancelled`, `processing` -> `shipped`/`cancelled`, `shipped` -> `delivered`, `delivered`/`cancelled` -> terminal).
+- **Status Control UX Clarity**: Displayed "Current: <Badge>" above the select. Added a disabled placeholder "Select a new status" (`t("selectPlaceholder")`). Kept the Update button disabled until a non-placeholder option is chosen, and reset the dropdown back to the placeholder following successful mutation or order ID change. Added full bilingual i18n support in `messages/en.json` and `messages/vi.json` maintaining 541/541 key parity.
+- **Mobile Stepper Text**: Added a visible descriptive step label `{activeStep.label}: {activeStep.title}` (e.g. `Step 1 of 3: Customer`) above the compact stepper circles on viewports below `sm`, preserving `aria-current="step"` and ensuring zero horizontal scrollbar (`scrollWidth === clientWidth === 375`).
+- **Semantic HTML5 `<progress>` Element**: Replaced `div` + inline `style={{ width }}` in `src/features/orders/components/invoice-upload.tsx` with a semantic `<progress value={progressPercent} max={100} className="w-full h-2 accent-primary rounded-full overflow-hidden bg-muted">` element. Removed manual ARIA progressbar attributes (`role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`). Added accessible dynamic label `aria-label={t("uploading", { percent: progressPercent })}`.
+- **KPI Error vs Empty State Distinction**: In `src/features/reports/components/daily-sales-report.tsx`, updated KPI cards when query settles on error (`!data` / `!summary`) to display em-dash "—" for all 4 tiles (Total Revenue, Total Orders, Average Order Value, Cancellation Rate). Preserved `$0.00`, `0`, "—", "—" for valid zero-order days.
+- **RFC 3986 Path Component Safety**: Wrapped dynamic `orderId` path segments in `src/features/orders/api.ts` with `encodeURIComponent` across `/api/orders/${encoded}`, `/api/orders/${encoded}/status`, and `/api/orders/${encoded}/invoice`.
+- **Motion Preference Accessibility**: Replaced unconditional `behavior: "smooth"` with media query check `window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"` in `src/features/orders/components/create-order-items-step.tsx`.
+- **Toast Visual Alignment**: Adjusted Toast root styling in `src/components/ui/toaster.tsx` from `justify-between` to `justify-start` with `gap-3`, ensuring left-aligned titles and descriptions regardless of viewport width, pushing action buttons to the right with `ml-auto`.
+
+### 3. Corrections & Adjustments
+
+1. **Next.js Route Announcer Disambiguation**: In automated test for error KPI tiles, `page.waitForSelector('[role="alert"]')` originally matched Next.js's internal `<div id="__next-route-announcer__" role="alert">` before the report query settled into error state. Refined selector to `[role="alert"]:has(h2)` and passed `scenario=fail` query parameter to accurately target the application error banner and confirm all four "—" tiles.
+2. **Catalog Empty Search Feedback**: In `src/features/orders/components/create-order-items-step.tsx`, catalog search previously showed a blank container when no items matched the search term. Added an explicit empty state banner showing `t("items.emptySearch")` with full i18n key parity.
+3. **File Input Focus Ring**: Added `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2` to the file upload input in `invoice-upload.tsx` to satisfy WCAG 2.4.7 visible keyboard focus indicators.
+
+### 4. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (0 type errors).
+- `pnpm lint`: Exit code 0 (0 errors, 1 known baseline warning at `public/mockServiceWorker.js`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled all routes cleanly).
+- `pnpm exec prettier --check <allowlist>`: Exit code 0 across all 15 allowlist files.
+- `git diff --check`: Exit code 0 (clean diff, 0 whitespace warnings).
+- Duplicate export scan: 0 duplicate exports across all `.ts`/`.tsx` files.
+- Arbitrary Tailwind values grep (`-\[`): 0 matches in changed `src` files.
+- Inline styles grep (`style={{`): 0 matches in changed `src` files.
+- Translation key parity: 541 keys in `en.json` == 541 keys in `vi.json`.
+- Playwright Automated Suite: All 11 test items and Part B captures passed with 0 failures in `output/playwright/polish-1/results.json`.
+
+## Polish 1 Repair r1 — Progress Appearance, Runbook Wording & Toast Visibility
+
+- **Date**: 2026-11-13
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `4917062bc39eae39a83e2a092bfeb20e4449152d`
+- **Branch**: `chore/ui-polish`
+
+### 1. Codex Review & Repair Scope (r1)
+
+Codex identified 3 repair items in `r1-prompt.md`:
+
+1. **P1 (<progress> color in Chromium)**: In Chromium, author styles (such as background, border, border-radius, or overflow) drop `<progress>` into its unstyled fallback state, ignoring `accent-color` and rendering grey track with bright green fill. Tailwind's universal reset `*, ::before, ::after { border: 0px solid ... }` also drops the native appearance. Set `<progress>` classes to exactly `w-full h-2 accent-primary` and applied `progress { border: revert; }` so Chromium retains its native appearance and styles the filled progress value in primary blue (`accent-primary`). Captured throttled upload between 30% and 80% (value = 35) across 1280px light, 1280px dark, and 375px dark viewports.
+2. **P2 (docs/delivery.md §6 Runbook step 4)**: Updated step 4 to: "Confirm Vercel has produced a preview for the PR and record the preview URL and source SHA in the PR description. This document is updated only at milestones (see §3)." Formatted with Prettier.
+3. **P3 (Toast evidence recaptures)**:
+   - Recaptured success toast at 1280px light while fully visible with opacity 1 (`toast-success-1280px-light.png`).
+   - Recaptured error toast with its action button at 375px in dark theme after colors settled (`toast-error-action-375px-dark.png`).
+
+### 2. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0.
+- `pnpm lint`: Exit code 0 (1 known baseline warning).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled all routes cleanly).
+- `pnpm exec prettier --check <allowlist>`: Exit code 0 across all allowlist files.
+- `git diff --check`: Exit code 0.
+- Playwright R1 Suite: All P1–P3 items passed in `output/playwright/polish-1-r1/results.json`.

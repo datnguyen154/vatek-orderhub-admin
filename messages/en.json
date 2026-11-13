@@ -169,6 +169,7 @@
         "addProductAria": "Add {name} to order",
         "selectedItemsHeading": "Order Line Items",
         "emptyItems": "No items added yet. Search and add products above.",
+        "emptySearch": "No products match your search.",
         "table": {
           "product": "Product",
           "price": "Unit Price",
@@ -251,8 +252,10 @@
       },
       "statusControl": {
         "title": "Fulfillment Status",
+        "currentStatus": "Current:",
         "label": "Change Status",
         "selectLabel": "Next Status",
+        "selectPlaceholder": "Select a new status",
         "submitButton": "Update status",
         "submitting": "Updating...",
         "terminalNotice": "No further status changes",

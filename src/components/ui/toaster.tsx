@@ -87,13 +87,13 @@ export function Toaster() {
         unstyled: true,
         classNames: {
           toast:
-            "group flex w-full items-center justify-between gap-3 overflow-hidden rounded-lg border p-4 shadow-lg text-sm data-[type=default]:border-border data-[type=default]:bg-surface data-[type=default]:text-foreground data-[type=error]:border-destructive/30 data-[type=error]:bg-destructive-muted data-[type=error]:text-destructive-muted-foreground data-[type=success]:border-success/30 data-[type=success]:bg-success-muted data-[type=success]:text-success-muted-foreground data-[type=warning]:border-warning/30 data-[type=warning]:bg-warning-muted data-[type=warning]:text-warning-muted-foreground data-[type=info]:border-primary/30 data-[type=info]:bg-primary-muted data-[type=info]:text-primary-muted-foreground",
+            "group flex w-full items-center justify-start gap-3 overflow-hidden rounded-lg border p-4 shadow-lg text-sm data-[type=default]:border-border data-[type=default]:bg-surface data-[type=default]:text-foreground data-[type=error]:border-destructive/30 data-[type=error]:bg-destructive-muted data-[type=error]:text-destructive-muted-foreground data-[type=success]:border-success/30 data-[type=success]:bg-success-muted data-[type=success]:text-success-muted-foreground data-[type=warning]:border-warning/30 data-[type=warning]:bg-warning-muted data-[type=warning]:text-warning-muted-foreground data-[type=info]:border-primary/30 data-[type=info]:bg-primary-muted data-[type=info]:text-primary-muted-foreground",
           title: "font-medium text-inherit text-sm",
           description: "text-xs opacity-90",
           actionButton:
-            "inline-flex h-control-sm items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+            "inline-flex h-control-sm items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ml-auto",
           cancelButton:
-            "inline-flex h-control-sm items-center justify-center rounded-md bg-muted px-3 text-xs font-medium text-muted-foreground hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+            "inline-flex h-control-sm items-center justify-center rounded-md bg-muted px-3 text-xs font-medium text-muted-foreground hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ml-auto",
           error:
             "border-destructive/30 bg-destructive-muted text-destructive-muted-foreground",
           success:

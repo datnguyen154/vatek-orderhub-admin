@@ -169,6 +169,7 @@
         "addProductAria": "Thêm {name} vào đơn hàng",
         "selectedItemsHeading": "Các mặt hàng trong đơn",
         "emptyItems": "Chưa có mặt hàng nào được thêm. Hãy tìm kiếm và thêm sản phẩm ở trên.",
+        "emptySearch": "Không có sản phẩm nào khớp với tìm kiếm.",
         "table": {
           "product": "Sản phẩm",
           "price": "Đơn giá",
@@ -251,8 +252,10 @@
       },
       "statusControl": {
         "title": "Trạng thái thực hiện",
+        "currentStatus": "Hiện tại:",
         "label": "Đổi trạng thái",
         "selectLabel": "Trạng thái kế tiếp",
+        "selectPlaceholder": "Chọn trạng thái mới",
         "submitButton": "Cập nhật trạng thái",
         "submitting": "Đang cập nhật...",
         "terminalNotice": "Không thể đổi trạng thái tiếp theo",
