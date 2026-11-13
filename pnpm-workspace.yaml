@@ -2,3 +2,4 @@ packages:
   - "."
 allowBuilds:
   "msw@2.7.3": true
+  "esbuild@0.25.12": true

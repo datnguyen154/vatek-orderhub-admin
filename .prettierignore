@@ -1,13 +1,21 @@
 node_modules
 .next
+.next-*
 out
 dist
 coverage
 pnpm-lock.yaml
 *.tsbuildinfo
+test-results
+playwright-report
+blob-report
 
 # Vendored UI/UX search resources; format the local SKILL.md separately.
 .agents/skills/ui-ux-pro-max/data/
 .agents/skills/ui-ux-pro-max/scripts/
 .agents/skills/ui-ux-pro-max/references/quick-reference.md
 .agents/skills/ui-ux-pro-max/references/pro-rules.md
+
+# Pre-existing handoffs from prior sessions
+docs/handoffs/session-14.md
+docs/handoffs/session-15-r1.md
