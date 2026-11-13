@@ -16,7 +16,9 @@ export function CurrentRouteLabel() {
 
   let label = t("orders");
   if (pathname) {
-    if (pathname.startsWith("/preferences")) {
+    if (pathname.startsWith("/reports/daily-sales")) {
+      label = t("dailySales");
+    } else if (pathname.startsWith("/preferences")) {
       label = t("preferences");
     } else if (pathname.startsWith("/orders")) {
       label = t("orders");

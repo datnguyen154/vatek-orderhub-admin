@@ -571,3 +571,100 @@ export interface OrderDetail extends Order {
 - This is a capstone educational demo. No physical PDF files are stored on server disk or persisted across process restarts.
 - MSW records only file metadata (`fileName`, `size`, `uploadedAt`).
 - All state resets to deterministic seed fixtures upon browser refresh.
+
+---
+
+## 12. Daily Sales Report (Session 16 / Step-18 / D14)
+
+### 12.1. Metrics & Financial Definitions
+
+- An order belongs to the **UTC calendar day of its creation**. A later cancellation counts on that creation day.
+- `totalOrders`: All orders created on that calendar day, including cancelled ones.
+- `cancelledOrders`: Orders on that day whose status is `cancelled`.
+- `completedOrders`: `totalOrders − cancelledOrders` (all non-cancelled orders, regardless of intermediate processing/shipping/delivery status).
+- `revenueCents`: Sum of line totals of non-cancelled orders, represented strictly as an integer in US cents (e.g. $1,234.50 is 123450 cents).
+- `aovCents`: `round(revenueCents / completedOrders)`, or `null` when `completedOrders` is 0.
+- `cancellationRate`: `cancelledOrders / totalOrders` (ratio 0.0–1.0), or `null` when `totalOrders` is 0.
+- **Summary Recomputation Rule**: All summary values across the selected date range are recomputed from the summed daily counts:
+  - `summary.totalOrders = sum(daily.totalOrders)`
+  - `summary.completedOrders = sum(daily.completedOrders)`
+  - `summary.cancelledOrders = sum(daily.cancelledOrders)`
+  - `summary.revenueCents = sum(daily.revenueCents)`
+  - `summary.aovCents = completedOrders > 0 ? round(revenueCents / completedOrders) : null`
+  - `summary.cancellationRate = totalOrders > 0 ? cancelledOrders / totalOrders : null`
+    Daily AOV and cancellation rates are never averaged.
+
+### 12.2. Deterministic Sales Dataset (`src/mocks/data/sales.ts`)
+
+- Spans 122 calendar days from **2026-09-01** to **2026-12-31**.
+- Generated deterministically using a fixed mathematical formula over day index without `Math.random()` or `Date.now()`.
+- **Zero-Order Days**:
+  - `2026-09-15`
+  - `2026-10-15`
+  - `2026-11-05`
+  - `2026-12-25`
+    These days record `totalOrders: 0`, `cancelledOrders: 0`, `revenueCents: 0`, `aovCents: null`.
+- **Only-Cancelled Days**:
+  - `2026-09-20` (`totalOrders: 3`, `cancelledOrders: 3`, `revenueCents: 0`)
+  - `2026-10-20` (`totalOrders: 4`, `cancelledOrders: 4`, `revenueCents: 0`)
+  - `2026-11-20` (`totalOrders: 2`, `cancelledOrders: 2`, `revenueCents: 0`)
+    These days record `totalOrders > 0`, `cancelledOrders === totalOrders`, `completedOrders: 0`, `revenueCents: 0`, `aovCents: null`, and `cancellationRate: 1.0` (100.0%).
+- **Independence from Orders Store**: The report does not read the in-memory order store (`inMemoryOrders`), so orders created or cancelled in the app do not change it.
+
+### 12.3. Endpoint: `GET /api/reports/daily?from=YYYY-MM-DD&to=YYYY-MM-DD`
+
+- **Method**: `GET`
+- **Endpoint**: `/api/reports/daily`
+- **Authentication**: Requires valid demo Bearer token via `authenticateRequest`. Missing or invalid tokens return `401 Unauthorized` (`{ code: "token_expired" }`).
+- **Authorization**: Requires `reports:view` permission. Accounts without this permission (such as `viewer`) return `403 Forbidden` (`{ code: "forbidden" }`).
+- **Query Parameters**:
+  - `from`: Start date string in `YYYY-MM-DD` format (UTC calendar day, inclusive).
+  - `to`: End date string in `YYYY-MM-DD` format (UTC calendar day, inclusive).
+- **Validation**:
+  - Missing or non-date `from`/`to` returns `400 Bad Request` (`{ code: "invalid_range" }`).
+  - `from > to` returns `400 Bad Request` (`{ code: "invalid_range" }`).
+  - Range longer than 92 days inclusive returns `400 Bad Request` (`{ code: "invalid_range" }`).
+- **Success (`200 OK`)**:
+  ```json
+  {
+    "data": {
+      "range": { "from": "2026-10-30", "to": "2026-11-12" },
+      "currency": "USD",
+      "summary": {
+        "totalOrders": 192,
+        "completedOrders": 174,
+        "cancelledOrders": 18,
+        "revenueCents": 1152840,
+        "aovCents": 6626,
+        "cancellationRate": 0.09375
+      },
+      "daily": [
+        {
+          "date": "2026-10-30",
+          "totalOrders": 14,
+          "completedOrders": 13,
+          "cancelledOrders": 1,
+          "revenueCents": 87490,
+          "aovCents": 6730
+        }
+      ]
+    }
+  }
+  ```
+  `daily` contains exactly one entry per calendar day in date order. Calendar days falling outside the dataset (before 2026-09-01 or after 2026-12-31) are zero-filled (`totalOrders: 0, completedOrders: 0, cancelledOrders: 0, revenueCents: 0, aovCents: null`).
+- **Scenarios & Latency**:
+  - Scenario resolution: `x-mock-report` request header first, followed by `localStorage.orderhub_mock_report`.
+  - `fail`: returns `500 Internal Server Error` (`{ code: "report_failed" }`) after 400ms delay.
+  - `delay`: waits 1500ms before returning `200 OK`.
+  - Default: waits 400ms before returning `200 OK`.
+
+### 12.4. CSV Export Contract
+
+- **Access Control**: The "Export CSV" button is rendered only with `reports:export` permission (admin). Staff and viewer roles do not see the export affordance.
+- **Client-Side Generation**: This is a UI-only gate, because the CSV is built in the browser from data the user can already view.
+- **CSV Format Specification**:
+  - Header: `Date,Total Orders,Completed Orders,Cancelled Orders,Revenue (USD),Average Order Value (USD)` (English in both locales).
+  - Money: Formatted in US dollars with 2 decimal places and dot decimal separator, without dollar signs or thousands separators (e.g. `874.90`). Null AOV values are formatted as `0.00`.
+  - Escaping: RFC 4180 rules applied to each field (fields containing commas, double quotes, or newlines are wrapped in quotes, with internal quotes doubled).
+  - Line Endings: Standard CRLF (`\r\n`).
+  - Filename: `daily-sales_<from>_<to>.csv`.

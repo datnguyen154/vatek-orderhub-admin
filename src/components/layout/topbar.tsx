@@ -27,7 +27,7 @@ export async function Topbar({ userEmail, role }: TopbarProps) {
     <header className="fixed top-0 left-0 right-0 h-topbar z-30 border-b border-border bg-surface px-4 lg:px-6 flex items-center justify-between">
       {/* Left section: mobile menu toggle, brand, and breadcrumb */}
       <div className="flex items-center gap-3">
-        <MobileNav />
+        <MobileNav role={role} />
 
         <div className="flex items-center gap-3">
           <span

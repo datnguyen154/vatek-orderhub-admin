@@ -49,6 +49,9 @@
 
   --color-focus: 29 78 216; /* #1d4ed8 */
 
+  /* Chart Visualization Tokens */
+  --color-chart-bar: 29 78 216; /* #1d4ed8 (WCAG Non-text contrast >= 3:1 on light surface) */
+
   /* Component Dimensions */
   --sidebar-width: 16rem; /* 256px */
   --sidebar-collapsed-width: 4rem; /* 64px */
@@ -106,6 +109,9 @@
   --color-warning-muted-foreground: 252 211 77; /* #fcd34d (7.1:1 AAA) */
 
   --color-focus: 96 165 250; /* #60a5fa visible focus ring on dark surfaces */
+
+  /* Chart Visualization Tokens */
+  --color-chart-bar: 96 165 250; /* #60a5fa (5.75:1 on #1e293b dark surface, WCAG Non-text contrast >= 3:1) */
 }
 
 @layer base {

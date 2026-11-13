@@ -2143,3 +2143,96 @@ Based on the coordinator's initial review in `initial-review.md` and `r1-prompt.
 - `git diff --check`: Exit code 0.
 - `git diff --cached`: Clean (0 staged files).
 - Playwright Suite: All repair checks passed with zero failures in `output/playwright/session-15-r1/results.json`.
+
+## Session 16 — Step-18 / D14: Daily Sales Report (KPIs, Recharts Bar Visualization, Date Range, Client CSV Export)
+
+- **Date**: 2026-11-12
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `11ac8ac49535f51b2cca2a26e94b146083656896` (PR #12 merge, verified in `origin/main`)
+- **Branch**: `feat/daily-sales-report`
+
+### 1. Task Summary & Scope
+
+Implemented the complete Daily Sales Report feature for OrderHub Admin Console according to the user-approved contract:
+
+- Server Component route `src/app/(dashboard)/reports/daily-sales/page.tsx` with localized metadata and session guard (`reports:view`). Disallowed roles (e.g. `viewer`) receive an accessible localized "no access" card with link back to `/orders`.
+- Interactive client island `DailySalesReport` with URL-backed date range filter (`?from=YYYY-MM-DD&to=YYYY-MM-DD`), default 14 days ending today (UTC).
+- 4 responsive KPI tiles: Total revenue, Total orders, Average order value, Cancellation rate. Recomputed from summed daily counts (never averaged).
+- Recharts single bar series (`sales-chart.tsx`) for daily revenue (USD) using semantic theme CSS variables (`rgb(var(--color-primary))`, `rgb(var(--color-border))`, `rgb(var(--color-muted-foreground))`) and custom tooltip.
+- Accessible tabular breakdown with horizontal scrolling in its own container at 375 px as text alternative for the chart.
+- Client-side RFC 4180 CSV export with CRLF line endings, double-quote escaping, and filename `daily-sales_<from>_<to>.csv`, gated by `reports:export` (Admin only).
+- MSW endpoint `GET /api/reports/daily` supporting date range validation (max 92 days), 403 RBAC guard, zero-filling, and scenarios (`fail` -> 500, `delay` -> 1500ms).
+- Added `recharts@3.10.1` and `date-fns@4.4.0` as exact pinned dependencies supporting React 19.
+
+### 2. UX Research (UI/UX Pro Max)
+
+Consulted the UX guidelines database (`.agents/skills/ui-ux-pro-max/data/ux-guidelines.csv`) via `python -B search.py` across 5 core interaction patterns and concerns:
+
+- **No. 86 (Number Formatting)**: Applied standard thousand separators and currency formatting (`formatCurrency`) for revenue and AOV; cancellation rate formatted to 1 decimal place with percentage symbol. Formatted null metrics as em-dash (`—`).
+- **No. 79 (Empty States)**: Displayed clear localized empty state illustration and message ("No sales data for this period") when total orders count is 0, keeping KPI tiles visible with zeroes and em-dashes.
+- **No. 85 (Date Formatting)**: Parsed dates as UTC calendar days and used `date-fns` `format()` on noon-anchored dates to prevent timezone drift across `America/Los_Angeles` and `Asia/Ho_Chi_Minh`.
+- **No. 56 (Inline Validation)**: Rendered inline error alert next to date inputs when `from > to` or range exceeds 92 days; preserved input contents and kept Apply button usable while dispatching 0 network requests.
+- **No. 37 & 36 (Color Only & Color Contrast)**: Ensured chart data is paired with a comprehensive data table text alternative; used semantic theme tokens exceeding WCAG AAA contrast in both light and dark modes.
+- **No. 71 & 69 (Table Handling & Horizontal Scroll)**: Wrapped daily breakdown table in an accessible scrollable container (`role="region"`, `overflow-x-auto`, `tabIndex={0}`) preventing page-level horizontal overflow at 375 px.
+- **No. 32 & 31 (Loading Buttons & Disabled States)**: Export CSV button indicates loading state and disables when report is fetching, has errored, or contains zero orders.
+
+### 3. Architecture & Design Choices
+
+- **UTC Calendar Day Semantics**: Dates handled strictly as `YYYY-MM-DD` strings. Date math performed with `Date.UTC` and 86,400,000ms increments. Never parsed into local midnight dates.
+- **Strict Separation from Orders Store**: `mockSalesData` generated deterministically over day index in `src/mocks/data/sales.ts`. Independent from mutable `inMemoryOrders`.
+- **RBAC Matrix Conformance**:
+  - `admin`: views report, sees desktop and mobile navigation items, downloads CSV.
+  - `staff`: views report and navigation items, but CSV export button is hidden.
+  - `viewer`: no navigation items, receives 403 on API requests, and receives "no access" server card on direct page navigation.
+- **Zero Hydration Warnings in Recharts**: Gated client rendering with `mounted` state guard to ensure SSR output contains fixed-height placeholder without mismatched SVG dimensions.
+
+### 4. Corrections & Adjustments
+
+1. **Button Primitive Variant**: Export CSV initially set `variant="outline"`, which is not exported by `buttonVariants`. Corrected to `variant="secondary"`.
+2. **Table Min-Width Class**: Removed arbitrary Tailwind value `min-w-[640px]` from the daily table in favor of standard `w-full min-w-full` paired with column `whitespace-nowrap`.
+3. **Playwright SVG Text Locators**: Recharts 3.x renders XAxis tick labels within `<g class="recharts-xAxis-tick-labels">` with `<text>` elements. Switched from `.innerText` (which returns empty string for SVG text elements) to `.evaluateAll(els => els.map(e => e.textContent.trim()))`.
+4. **Alert Selector Disambiguation**: Next.js 15 renders an internal `<div role="alert" id="__next-route-announcer__">`. Updated Playwright alert selector to `[role="alert"]:not(#__next-route-announcer__)`.
+5. **In-Browser Fetch for Service Worker Tests**: Playwright's `page.request.get` bypasses browser Service Workers and hits the Next server directly. Switched direct API tests to `page.evaluate(async () => fetch(...))` so requests are captured by MSW in the browser context.
+
+### 5. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0 (strict mode, zero errors).
+- `pnpm lint`: Exit code 0 (0 errors, 1 pre-existing warning at `public/mockServiceWorker.js:1`).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled `/reports/daily-sales` cleanly at 125 kB / 268 kB First Load JS).
+- Scoped Prettier check: Exit code 0 across all touched and created allowlist files.
+- `git diff --check`: Exit code 0 (no whitespace issues or conflict markers).
+- Arbitrary Tailwind values grep (`-\[`): 0 matches in changed `src` files.
+- `git diff --cached`: Clean (0 staged files).
+- Playwright Automated Suite: All 10 verification items passed with zero failures in `output/playwright/session-16/results.json`.
+
+## Session 16 Repair r1 — Step-18 / D14: Bar Contrast, Prettier Discipline, Localized Errors & URL Sync
+
+- **Date**: 2026-11-13
+- **Assignee / Role**: Antigravity (Worker)
+- **Coordinator**: Codex
+- **Baseline HEAD**: `11ac8ac49535f51b2cca2a26e94b146083656896`
+- **Branch**: `feat/daily-sales-report`
+
+### 1. Codex Initial Review Analysis & Repair Scope (r1)
+
+Codex identified 8 findings from the initial review:
+
+1. **F1 (Dark-mode bar contrast)**: Dark theme bar on `bg-surface` (`#1e293b`) had a contrast ratio of 2.83:1 with `--color-primary` (`#2563eb`), failing WCAG 1.4.11 non-text requirement (>= 3:1). Added `--color-chart-bar` in `src/app/globals.css` (`96 165 250` / `#60a5fa` in dark, giving 5.75:1 contrast; `29 78 216` in light, giving 6.70:1 contrast). Added token to `docs/design-system.md` and used `fill="rgb(var(--color-chart-bar))"` in `sales-chart.tsx`.
+2. **F2 (Prettier check order & trailing blank lines)**: 4 files (`api.ts`, `sales-chart.tsx`, `types.ts`, `src/mocks/data/sales.ts`) had extra trailing blank lines that failed Prettier after previous build. Formatted all files and enforced running checks strictly as the last step without subsequent file modifications.
+3. **F3 (Localized error strings)**: Removed hard-coded English error messages in `use-daily-sales-report.ts` so the UI always renders localized `t("errorDescription")` in both English and Vietnamese. Verified with Vietnamese `fail` scenario screenshot.
+4. **F4 (CSV filename & row sync)**: Generated CSV download filename from loaded data (`data.range.from` and `data.range.to`) rather than URL query parameters, and disabled Export button while `isFetching` to prevent stale data export during slow fetches.
+5. **F5 (URL date inputs synchronization)**: Added `useEffect` in `daily-sales-report.tsx` to resynchronize `inputFrom` and `inputTo` whenever `activeFrom` and `activeTo` change (e.g. on browser Back/Forward).
+6. **F6 (Runtime response validation)**: Implemented `isDailySalesReportResponse` type guard in `src/features/reports/types.ts` checking range, summary, and daily items array, and passed it as `validate` option to `apiClient` in `getDailySalesReport`.
+7. **F7 (Locale date labels with date-fns)**: Formatted chart XAxis as `dd/MM` and table dates as `EEE, dd/MM/yyyy` (vi) and `EEE, MMM d, yyyy` (en) using `date-fns` with `vi` and `enUS` locales on local-noon anchored dates. Verified identical labels across `America/Los_Angeles` and `Asia/Ho_Chi_Minh`.
+8. **F8 (Range boundary verification)**: Proved exact 92-day range `2026-08-01..2026-10-31` is accepted (1 request, 200, 92 rows), while 93-day range `2026-08-01..2026-11-01` is blocked in UI (0 requests, inline error alert) and returns HTTP 400 (`invalid_range`) on direct API fetch.
+
+### 2. Verification Results
+
+- `pnpm exec tsc --noEmit`: Exit code 0.
+- `pnpm lint`: Exit code 0 (1 known baseline warning).
+- `pnpm build`: Exit code 0 (Next.js 15.5.29 compiled `/reports/daily-sales` cleanly at 128 kB / 271 kB First Load JS).
+- `pnpm exec prettier --check <allowlist>`: Exit code 0 across all allowlist files.
+- `git diff --check`: Exit code 0 (clean diff, zero whitespace errors).
+- Duplicate-export scan: 0 duplicates across all 12 changed `.ts`/`.tsx` files.
+- Playwright R1 Suite: All F1-F8 criteria passed with evidence in `output/playwright/session-16-r1/results.json`.
