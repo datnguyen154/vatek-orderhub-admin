@@ -22,6 +22,17 @@ export const ORDER_STATUSES: readonly OrderStatus[] = [
   "cancelled",
 ] as const;
 
+export const ORDER_STATUS_TRANSITIONS: Record<
+  OrderStatus,
+  readonly OrderStatus[]
+> = {
+  pending: ["processing", "cancelled"],
+  processing: ["shipped", "cancelled"],
+  shipped: ["delivered"],
+  delivered: [],
+  cancelled: [],
+} as const;
+
 export interface Order {
   id: string;
   orderCode: string;

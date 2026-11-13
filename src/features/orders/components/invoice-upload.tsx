@@ -207,7 +207,7 @@ export function InvoiceUpload({ order, role }: InvoiceUploadProps) {
                 accept="application/pdf"
                 onChange={handleFileChange}
                 disabled={uploadStatus === "uploading"}
-                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 rounded-md"
               />
 
               {validationError && (
@@ -232,21 +232,18 @@ export function InvoiceUpload({ order, role }: InvoiceUploadProps) {
             {/* Progress bar during upload */}
             {uploadStatus === "uploading" && (
               <div className="space-y-1.5">
+                <style>{`progress { border: revert; }`}</style>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{t("uploading", { percent: progressPercent })}</span>
                 </div>
-                <div
-                  role="progressbar"
-                  aria-valuenow={progressPercent}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  className="w-full bg-muted rounded-full h-2 overflow-hidden"
+                <progress
+                  value={progressPercent}
+                  max={100}
+                  aria-label={t("uploading", { percent: progressPercent })}
+                  className="w-full h-2 accent-primary"
                 >
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all duration-150"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
+                  {progressPercent}%
+                </progress>
               </div>
             )}
 

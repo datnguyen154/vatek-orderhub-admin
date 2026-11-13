@@ -93,7 +93,13 @@ export function CreateOrderItemsStep({
       // Focus existing line's quantity field instead of creating a duplicate line
       const inputEl = quantityInputRefs.current[existingIndex];
       if (inputEl) {
-        inputEl.scrollIntoView({ block: "center", behavior: "smooth" });
+        const prefersReducedMotion =
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        inputEl.scrollIntoView({
+          block: "center",
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
         inputEl.focus();
         inputEl.select();
       }
@@ -168,31 +174,37 @@ export function CreateOrderItemsStep({
 
           {!isProductsLoading && !isProductsError && (
             <div className="divide-y divide-border border border-border rounded-lg bg-surface max-h-56 overflow-y-auto">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center justify-between p-3 gap-3 hover:bg-muted/40 transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-body font-medium text-foreground truncate">
-                      {product.name}
-                    </p>
-                    <p className="text-caption text-muted-foreground font-mono">
-                      {product.sku} ·{" "}
-                      {formatCurrency(product.unitPrice, "USD", locale)}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleAddProduct(product)}
-                    aria-label={t("addProductAria", { name: product.name })}
-                  >
-                    {t("addProduct")}
-                  </Button>
+              {filteredProducts.length === 0 ? (
+                <div className="p-4 text-center text-caption text-muted-foreground">
+                  {t("emptySearch")}
                 </div>
-              ))}
+              ) : (
+                filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-3 gap-3 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-body font-medium text-foreground truncate">
+                        {product.name}
+                      </p>
+                      <p className="text-caption text-muted-foreground font-mono">
+                        {product.sku} ·{" "}
+                        {formatCurrency(product.unitPrice, "USD", locale)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleAddProduct(product)}
+                      aria-label={t("addProductAria", { name: product.name })}
+                    >
+                      {t("addProduct")}
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </CardContent>

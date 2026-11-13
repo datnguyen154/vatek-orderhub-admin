@@ -403,7 +403,7 @@ export function DailySalesReport({ role }: DailySalesReportProps) {
                       "USD",
                       intlLocale
                     )
-                  : "$0.00"}
+                  : "—"}
               </div>
             )}
           </CardContent>
@@ -425,7 +425,7 @@ export function DailySalesReport({ role }: DailySalesReportProps) {
                   ? new Intl.NumberFormat(intlLocale).format(
                       summary.totalOrders
                     )
-                  : "0"}
+                  : "—"}
               </div>
             )}
           </CardContent>

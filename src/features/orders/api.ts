@@ -139,10 +139,13 @@ export async function getOrderDetail(
   orderId: string,
   options: { signal?: AbortSignal } = {}
 ): Promise<OrderDetailResponse> {
-  return apiClient<OrderDetailResponse>(`/api/orders/${orderId}`, {
-    signal: options.signal,
-    validate: isOrderDetailResponse,
-  });
+  return apiClient<OrderDetailResponse>(
+    `/api/orders/${encodeURIComponent(orderId)}`,
+    {
+      signal: options.signal,
+      validate: isOrderDetailResponse,
+    }
+  );
 }
 
 /**
@@ -159,16 +162,19 @@ export async function updateOrderStatus(
       ? window.localStorage?.getItem("orderhub_mock_status") || undefined
       : undefined);
 
-  return apiClient<UpdateOrderStatusResponse>(`/api/orders/${orderId}/status`, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
-    signal: options.signal,
-    headers: {
-      "Content-Type": "application/json",
-      ...(scenario ? { "x-mock-status": scenario } : {}),
-    },
-    validate: isUpdateOrderStatusResponse,
-  });
+  return apiClient<UpdateOrderStatusResponse>(
+    `/api/orders/${encodeURIComponent(orderId)}/status`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+      signal: options.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(scenario ? { "x-mock-status": scenario } : {}),
+      },
+      validate: isUpdateOrderStatusResponse,
+    }
+  );
 }
 
 export class UploadError extends Error {
@@ -233,7 +239,7 @@ export async function uploadInvoice(
       }
 
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", `/api/orders/${orderId}/invoice`);
+      xhr.open("POST", `/api/orders/${encodeURIComponent(orderId)}/invoice`);
       xhr.setRequestHeader("Authorization", `Bearer ${bearerToken}`);
 
       const scenario =

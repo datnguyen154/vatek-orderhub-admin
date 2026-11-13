@@ -15,7 +15,12 @@ import { mockCustomers } from "./data/customers";
 import { mockProducts } from "./data/products";
 import { mockSalesData } from "./data/sales";
 import { hasPermission, type Role } from "@/features/auth/types";
-import type { Order, OrderDetail, OrderStatus } from "@/features/orders/types";
+import {
+  ORDER_STATUS_TRANSITIONS,
+  type Order,
+  type OrderDetail,
+  type OrderStatus,
+} from "@/features/orders/types";
 import {
   createOrderSchema,
   calculateOrderTotals,
@@ -473,18 +478,10 @@ export const handlers = [
     }
     const newStatus = rawStatus as OrderStatus;
 
-    // Allowed transitions:
-    // pending -> processing or cancelled
-    // processing -> shipped or cancelled
-    // shipped -> delivered
-    // delivered and cancelled are terminal
+    // Allowed transitions using shared ORDER_STATUS_TRANSITIONS mapping
     const currentStatus = order.status;
-    const isValidTransition =
-      (currentStatus === "pending" &&
-        (newStatus === "processing" || newStatus === "cancelled")) ||
-      (currentStatus === "processing" &&
-        (newStatus === "shipped" || newStatus === "cancelled")) ||
-      (currentStatus === "shipped" && newStatus === "delivered");
+    const allowedTransitions = ORDER_STATUS_TRANSITIONS[currentStatus] ?? [];
+    const isValidTransition = allowedTransitions.includes(newStatus);
 
     if (!isValidTransition) {
       return HttpResponse.json({ code: "invalid_transition" }, { status: 409 });

@@ -255,10 +255,15 @@ function CreateOrderWizardContent() {
     },
   ];
 
+  const activeStep = steps.find((s) => s.number === currentStep) ?? steps[0];
+
   return (
     <div className="flex flex-col space-y-6">
       {/* Mobile Stepper: single horizontal row below sm */}
-      <nav aria-label={t("stepper.navAria")} className="sm:hidden">
+      <nav aria-label={t("stepper.navAria")} className="sm:hidden space-y-1.5">
+        <p className="text-xs font-semibold text-foreground">
+          {activeStep.label}: {activeStep.title}
+        </p>
         <ol className="flex items-center justify-between gap-1 p-2 rounded-lg border border-border bg-surface text-xs">
           {steps.map((step) => {
             const isCurrent = currentStep === step.number;
