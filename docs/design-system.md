@@ -93,6 +93,7 @@ All design tokens are implemented as CSS custom properties in `src/app/globals.c
 | `warning-muted`        | `#FEF3C7` | `254 243 199`          | Pending/Processing status badge background                     | 1.06:1                    | 1.11:1                    | Badge background                        |
 | `warning-muted-fg`     | `#92400E` | `146 64 14`            | Text on Pending/Processing status badge                        | —                         | 6.37:1 (on warn-muted)    | AA (> 4.5:1)                            |
 | `focus`                | `#1D4ED8` | `29 78 216`            | `:focus-visible` ring outline (2px solid, 2px offset)          | 6.41:1                    | 6.70:1                    | Non-text UI (>= 3:1)                    |
+| `chart-bar`            | `#1D4ED8` | `29 78 216`            | Bar series fill in analytics charts (`#60A5FA` in dark)        | —                         | 6.70:1 / 5.75:1           | Non-text UI (>= 3:1)                    |
 
 _Note: All contrast ratios calculated using the standard WCAG relative luminance formula: $L = 0.2126R + 0.7152G + 0.0722B$ and $(L_1 + 0.05) / (L_2 + 0.05)$._
 

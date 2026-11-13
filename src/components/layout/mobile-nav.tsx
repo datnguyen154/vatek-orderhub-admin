@@ -12,6 +12,15 @@ import {
   ModalBody,
 } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
+import {
+  hasPermission,
+  type Role,
+  type Permission,
+} from "@/features/auth/types";
+
+export interface MobileNavProps {
+  role?: Role;
+}
 
 /**
  * Mobile Navigation Drawer
@@ -27,15 +36,21 @@ import { cn } from "@/lib/utils";
  * - Closes automatically upon route selection
  * - Accurately sets aria-current="page" and active styling for /orders and /preferences
  */
-export function MobileNav() {
+export function MobileNav({ role }: MobileNavProps = {}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const t = useTranslations("nav");
 
-  const navigationItems = [
+  const navigationItems: Array<{
+    name: string;
+    href: string;
+    permission?: Permission;
+    icon: React.ReactNode;
+  }> = [
     {
       name: t("orders"),
       href: "/orders",
+      permission: "orders:view",
       icon: (
         <svg
           className="h-4 w-4 shrink-0"
@@ -54,8 +69,30 @@ export function MobileNav() {
       ),
     },
     {
+      name: t("dailySales"),
+      href: "/reports/daily-sales",
+      permission: "reports:view",
+      icon: (
+        <svg
+          className="h-4 w-4 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
+        </svg>
+      ),
+    },
+    {
       name: t("preferences"),
       href: "/preferences",
+      permission: "preferences:manage",
       icon: (
         <svg
           className="h-4 w-4 shrink-0"
@@ -79,6 +116,10 @@ export function MobileNav() {
       ),
     },
   ];
+
+  const visibleNavItems = navigationItems.filter(
+    (item) => !item.permission || (role && hasPermission(role, item.permission))
+  );
 
   return (
     <div className="lg:hidden">
@@ -118,7 +159,7 @@ export function MobileNav() {
         >
           <ModalBody className="flex-1 overflow-y-auto px-3 py-4">
             <nav aria-label={t("mobileNavAria")} className="space-y-1">
-              {navigationItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   pathname?.startsWith(`${item.href}/`);

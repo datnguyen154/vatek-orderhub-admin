@@ -49,6 +49,7 @@
   },
   "nav": {
     "orders": "Đơn hàng",
+    "dailySales": "Doanh số ngày",
     "preferences": "Tùy chọn",
     "console": "Bảng điều khiển",
     "signOut": "Đăng xuất",
@@ -532,6 +533,58 @@
     },
     "footer": {
       "text": "OrderHub Admin Console • Session 06 / Step-7 Delivery • Thực tập sinh Frontend Capstone"
+    }
+  },
+  "reports": {
+    "daily": {
+      "badge": "Phân tích",
+      "title": "Báo cáo doanh số ngày",
+      "description": "Phân tích số lượng đơn hàng hàng ngày, xu hướng doanh thu, giá trị đơn trung bình và tỷ lệ hủy đơn.",
+      "loading": "Đang tải báo cáo doanh số...",
+      "refreshing": "Đang cập nhật dữ liệu...",
+      "errorTitle": "Không thể tải báo cáo doanh số",
+      "errorDescription": "Đã xảy ra lỗi khi lấy dữ liệu báo cáo. Vui lòng kiểm tra kết nối mạng và thử lại.",
+      "retry": "Thử lại",
+      "filters": {
+        "fromLabel": "Từ ngày",
+        "toLabel": "Đến ngày",
+        "apply": "Áp dụng",
+        "applying": "Đang áp dụng...",
+        "invalidRange": "Khoảng thời gian không hợp lệ. Ngày bắt đầu phải trước hoặc bằng ngày kết thúc, và không quá 92 ngày."
+      },
+      "kpis": {
+        "totalRevenue": "Tổng doanh thu",
+        "totalOrders": "Tổng số đơn",
+        "aov": "Giá trị đơn trung bình",
+        "cancellationRate": "Tỷ lệ hủy đơn"
+      },
+      "chart": {
+        "title": "Doanh thu theo ngày",
+        "ariaLabel": "Biểu đồ doanh thu hàng ngày từ {from} đến {to}",
+        "revenue": "Doanh thu"
+      },
+      "table": {
+        "title": "Chi tiết theo ngày",
+        "ariaLabel": "Bảng chi tiết doanh số hàng ngày",
+        "caption": "Số lượng đơn hàng, đơn hoàn tất, đơn hủy, doanh thu và giá trị đơn trung bình theo ngày",
+        "colDate": "Ngày",
+        "colTotal": "Tổng đơn",
+        "colCompleted": "Hoàn tất",
+        "colCancelled": "Đã hủy",
+        "colRevenue": "Doanh thu",
+        "colAov": "AOV"
+      },
+      "exportCsv": "Xuất CSV",
+      "exporting": "Đang xuất...",
+      "empty": {
+        "title": "Không có dữ liệu doanh số cho giai đoạn này",
+        "description": "Không có đơn hàng nào được ghi nhận trong khoảng thời gian đã chọn. Hãy thử chọn khoảng thời gian khác."
+      },
+      "noAccess": {
+        "title": "Bạn không có quyền truy cập báo cáo",
+        "description": "Vai trò hiện tại của bạn không có quyền reports:view cần thiết để xem báo cáo này.",
+        "backToOrders": "Quay lại danh sách đơn"
+      }
     }
   }
 }

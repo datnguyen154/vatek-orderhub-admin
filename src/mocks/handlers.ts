@@ -13,6 +13,7 @@ import { http, HttpResponse, delay, passthrough } from "msw";
 import { mockOrders } from "./data/orders";
 import { mockCustomers } from "./data/customers";
 import { mockProducts } from "./data/products";
+import { mockSalesData } from "./data/sales";
 import { hasPermission, type Role } from "@/features/auth/types";
 import type { Order, OrderDetail, OrderStatus } from "@/features/orders/types";
 import {
@@ -587,5 +588,160 @@ export const handlers = [
     });
 
     return HttpResponse.json({ data: invoice }, { status: 201 });
+  }),
+
+  /**
+   * GET /api/reports/daily
+   *
+   * Returns daily sales aggregates for range [from..to] inclusive (max 92 days).
+   * Supports scenarios: x-mock-report header or localStorage "orderhub_mock_report"
+   * - "fail": 500 { code: "report_failed" }
+   * - "delay": 1500ms delay then success
+   * - default: 400ms delay then success
+   */
+  http.get("/api/reports/daily", async ({ request }) => {
+    const url = new URL(request.url);
+
+    // 1. Authenticate request via demo Bearer token
+    const authResult = authenticateRequest(request, url);
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
+    // 2. Permission check: reports:view
+    if (!hasPermission(authResult.role, "reports:view")) {
+      return HttpResponse.json({ code: "forbidden" }, { status: 403 });
+    }
+
+    // 3. Date range validation
+    const from = url.searchParams.get("from");
+    const to = url.searchParams.get("to");
+
+    function isValidYmd(str: string | null): str is string {
+      if (!str) return false;
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str);
+      if (!match) return false;
+      const y = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const d = parseInt(match[3], 10);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      return (
+        dt.getUTCFullYear() === y &&
+        dt.getUTCMonth() === m - 1 &&
+        dt.getUTCDate() === d
+      );
+    }
+
+    if (!isValidYmd(from) || !isValidYmd(to)) {
+      return HttpResponse.json({ code: "invalid_range" }, { status: 400 });
+    }
+
+    const [fy, fm, fd] = from.split("-").map(Number);
+    const [ty, tm, td] = to.split("-").map(Number);
+    const fromTs = Date.UTC(fy, fm - 1, fd);
+    const toTs = Date.UTC(ty, tm - 1, td);
+
+    if (fromTs > toTs) {
+      return HttpResponse.json({ code: "invalid_range" }, { status: 400 });
+    }
+
+    const dayCount = Math.round((toTs - fromTs) / 86400000) + 1; // inclusive
+    if (dayCount > 92) {
+      return HttpResponse.json({ code: "invalid_range" }, { status: 400 });
+    }
+
+    // 4. Resolve scenarios
+    let reportScenario: string | null = request.headers.get("x-mock-report");
+    if (!reportScenario && typeof window !== "undefined") {
+      try {
+        reportScenario =
+          window.localStorage?.getItem("orderhub_mock_report") || null;
+      } catch {
+        reportScenario = null;
+      }
+    }
+
+    if (reportScenario === "fail") {
+      await delay(400);
+      return HttpResponse.json({ code: "report_failed" }, { status: 500 });
+    }
+
+    if (reportScenario === "delay") {
+      await delay(1500);
+    } else {
+      await delay(400);
+    }
+
+    // 5. Build daily array and summary
+    const daily: Array<{
+      date: string;
+      totalOrders: number;
+      completedOrders: number;
+      cancelledOrders: number;
+      revenueCents: number;
+      aovCents: number | null;
+    }> = [];
+
+    let totalOrders = 0;
+    let completedOrders = 0;
+    let cancelledOrders = 0;
+    let revenueCents = 0;
+
+    for (let i = 0; i < dayCount; i++) {
+      const currentTs = fromTs + i * 86400000;
+      const d = new Date(currentTs);
+      const dateStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+
+      const record = mockSalesData.get(dateStr);
+      if (record) {
+        const dayCompleted = record.totalOrders - record.cancelledOrders;
+        const aovCents =
+          dayCompleted > 0
+            ? Math.round(record.revenueCents / dayCompleted)
+            : null;
+        daily.push({
+          date: dateStr,
+          totalOrders: record.totalOrders,
+          completedOrders: dayCompleted,
+          cancelledOrders: record.cancelledOrders,
+          revenueCents: record.revenueCents,
+          aovCents,
+        });
+        totalOrders += record.totalOrders;
+        completedOrders += dayCompleted;
+        cancelledOrders += record.cancelledOrders;
+        revenueCents += record.revenueCents;
+      } else {
+        daily.push({
+          date: dateStr,
+          totalOrders: 0,
+          completedOrders: 0,
+          cancelledOrders: 0,
+          revenueCents: 0,
+          aovCents: null,
+        });
+      }
+    }
+
+    const summaryAov =
+      completedOrders > 0 ? Math.round(revenueCents / completedOrders) : null;
+    const cancellationRate =
+      totalOrders > 0 ? cancelledOrders / totalOrders : null;
+
+    return HttpResponse.json({
+      data: {
+        range: { from, to },
+        currency: "USD",
+        summary: {
+          totalOrders,
+          completedOrders,
+          cancelledOrders,
+          revenueCents,
+          aovCents: summaryAov,
+          cancellationRate,
+        },
+        daily,
+      },
+    });
   }),
 ];

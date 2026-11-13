@@ -49,6 +49,7 @@
   },
   "nav": {
     "orders": "Orders",
+    "dailySales": "Daily sales",
     "preferences": "Preferences",
     "console": "Console",
     "signOut": "Sign out",
@@ -532,6 +533,58 @@
     },
     "footer": {
       "text": "OrderHub Admin Console • Session 06 / Step-7 Delivery • Capstone Frontend Intern"
+    }
+  },
+  "reports": {
+    "daily": {
+      "badge": "Analytics",
+      "title": "Daily Sales Report",
+      "description": "Analyze daily order volume, revenue trends, average order value, and cancellation rates.",
+      "loading": "Loading sales report...",
+      "refreshing": "Updating report data...",
+      "errorTitle": "Unable to load sales report",
+      "errorDescription": "An error occurred while retrieving report data. Please check your connection and retry.",
+      "retry": "Retry",
+      "filters": {
+        "fromLabel": "From",
+        "toLabel": "To",
+        "apply": "Apply",
+        "applying": "Applying...",
+        "invalidRange": "Invalid date range. Start date must be on or before end date, and range cannot exceed 92 days."
+      },
+      "kpis": {
+        "totalRevenue": "Total revenue",
+        "totalOrders": "Total orders",
+        "aov": "Average order value",
+        "cancellationRate": "Cancellation rate"
+      },
+      "chart": {
+        "title": "Daily Revenue",
+        "ariaLabel": "Daily sales revenue chart from {from} to {to}",
+        "revenue": "Revenue"
+      },
+      "table": {
+        "title": "Daily Breakdown",
+        "ariaLabel": "Daily sales breakdown table",
+        "caption": "Daily order counts, completed orders, cancellations, revenue, and average order value",
+        "colDate": "Date",
+        "colTotal": "Total",
+        "colCompleted": "Completed",
+        "colCancelled": "Cancelled",
+        "colRevenue": "Revenue",
+        "colAov": "AOV"
+      },
+      "exportCsv": "Export CSV",
+      "exporting": "Exporting...",
+      "empty": {
+        "title": "No sales data for this period",
+        "description": "There are no orders recorded in the selected date range. Try choosing a different range."
+      },
+      "noAccess": {
+        "title": "You do not have access to reports",
+        "description": "Your current role does not have the reports:view permission required to view this report.",
+        "backToOrders": "Return to Orders"
+      }
     }
   }
 }
